@@ -1,0 +1,81 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <ApplicationIcon>Assets\Orbit.ico</ApplicationIcon>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>OrbitClient</AssemblyName>
+    <RootNamespace>OrbitClient</RootNamespace>
+    <Product>Orbit Client</Product>
+    <Description>A desktop launcher and profile manager for Gorilla Tag.</Description>
+    <Company>Orbit Client</Company>
+    <Authors>Orbit Client</Authors>
+    <Copyright>Copyright © 2026 Orbit Client</Copyright>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Deterministic>true</Deterministic>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>portable</DebugType>
+	  
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\OrbitClientWebAPI\news.json" LogicalName="OrbitClient.news.json" />
+    <Resource Include="Assets\*.jpg" />
+    <Resource Include="Assets\Icons\*.svg" />
+    <Content Include="Assets\Icons\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\assistant_navigation.png" />
+    <None Remove="Assets\HatIcon.png" />
+    <None Remove="Assets\HomeIcon.png" />
+    <None Remove="Assets\HWIDSpoofer.png" />
+    <None Remove="Assets\NewsIcon.png" />
+    <None Remove="Assets\Orbit-removebg-preview.png" />
+    <None Remove="Assets\Orbit.ico" />
+    <None Remove="Assets\PersonIcon.png" />
+    <None Remove="Assets\SettingsIcon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\assistant_navigation.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\HatIcon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\HomeIcon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\HWIDSpoofer.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\NewsIcon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Orbit-removebg-preview.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Orbit.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\PersonIcon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\SettingsIcon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Supabase" Version="8.3.0" />
+  </ItemGroup>
+
+</Project>
