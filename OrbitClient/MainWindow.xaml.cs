@@ -30,18 +30,20 @@ public partial class MainWindow : Window
     private bool windowClosed;
     public MainWindow() : this(null) { }
 
-    public MainWindow(WorkspaceService? workspaceOverride)
+    public MainWindow(WorkspaceService? workspaceOverride, bool startBackgroundServices = true)
     {
         if (workspaceOverride is not null) workspace = workspaceOverride;
         InitializeComponent();
         InitializeFeatures();
         InitializeOrbitAccounts();
         InitializeOrbitNetworking();
-        Loaded += MainWindow_Loaded;
+        InitializeDesktopCapes(startBackgroundServices);
+        if (startBackgroundServices) Loaded += MainWindow_Loaded;
         Closed += (_, _) => windowClosed = true;
         pipeServer.MessageReceived += PipeServer_MessageReceived;
         pipeServer.ModConnected += PipeServer_ModConnected;
         pipeServer.ModDisconnected += PipeServer_ModDisconnected;
+        if (startBackgroundServices) _ = StartPipeServerSafe();
     }
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
@@ -76,7 +78,6 @@ public partial class MainWindow : Window
         if (windowClosed) return;
         var startup = NavPanel.Children.OfType<Button>().FirstOrDefault(x => x.Tag as string == preferences.StartupPage);
         if (startup != null) Nav_Click(startup, new RoutedEventArgs());
-        _ = StartPipeServerSafe();
         if (UpdateButton.IsChecked == true)
         {
             await CheckUpdate();
@@ -123,6 +124,15 @@ public partial class MainWindow : Window
             Console.WriteLine($"[MOD -> ORBIT] {message.Type}: {message.Data}");
             switch (message.Type)
             {
+                case "capes_request":
+                case "cape_preview":
+                case "cape_select":
+                case "cape_clear":
+                    _ = HandleCapeRequestAsync(message);
+                    break;
+                case "ping":
+                    _ = pipeServer.SendAsync("pong", message.Data);
+                    break;
                 case "connect":
                 case "connected":
                     break;
@@ -183,7 +193,8 @@ public partial class MainWindow : Window
         if (page is "Snapshots"
           or "Mod Library"
           or "BepInEx"
-          or "Appearance") OpenFeaturePage(page);
+          or "Appearance"
+          or "Capes") OpenFeaturePage(page);
     }
     private async void Launch_Click(object sender, RoutedEventArgs e)
     {

@@ -495,13 +495,11 @@ public partial class MainWindow
         }));
         actions.Children.Add(FeatureButton("Install companion", async () =>
         {
-            var bundled = System.IO.Path.Combine(AppContext.BaseDirectory, "Companion", "OrbitClient.dll");
-            if (!File.Exists(bundled)) throw new IOException("The bundled companion is missing. Reinstall the complete launcher package.");
             await InstallModFile(new()
             {
                 name = "Orbit companion",
                 download = "orbit://assets/Mods/OrbitClient.dll"
-            }, bundledSource: bundled);
+            });
             MessageBox.Show(this, "The base companion is installed. Restart the game to load it.", "Orbit");
         }));
         data.Children.Add(actions);
@@ -539,6 +537,7 @@ public partial class MainWindow
             ["Steam accounts"] = "person",
             ["Discover"] = "explore",
             ["Mod Library"] = "extension",
+            ["Capes"] = "palette",
             ["News"] = "newspaper",
             ["Snapshots"] = "backup",
             ["BepInEx"] = "download",

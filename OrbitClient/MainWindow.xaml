@@ -227,6 +227,7 @@
                             </StackPanel>
                         </Button>
                         <Button Content="Installed mods" Tag="Mod Library" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
+                        <Button Content="Capes" Tag="Capes" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
                         <TextBlock Text="UPDATES" Foreground="#59505E" FontSize="9" FontWeight="Bold" Margin="12,26,0,8" />
                         <Button Tag="News" Click="Nav_Click" Style="{StaticResource AnimatedNav}">
                             <StackPanel Orientation="Horizontal">

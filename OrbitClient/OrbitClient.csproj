@@ -26,7 +26,8 @@
 	  
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\..\OrbitClientWebAPI\news.json" LogicalName="OrbitClient.news.json" />
+    <Compile Include="..\..\..\Shared\CapeProtocol.cs" Link="Scripts\CapeProtocol.cs" />
+    <Compile Include="..\..\..\OrbitClientGtag\OrbitClientGtag\Core\CapeImageRules.cs" Link="Scripts\CapeImageRules.cs" />
     <Resource Include="Assets\*.jpg" />
     <Resource Include="Assets\Icons\*.svg" />
     <Content Include="Assets\Icons\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />

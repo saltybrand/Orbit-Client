@@ -11,7 +11,9 @@ namespace OrbitClient.Scripts
     public class OrbitPipeServer
     {
         private
-        const string PipeName = "OrbitClientPipe";
+        readonly string pipeName;
+
+        public OrbitPipeServer(string pipeName = "OrbitClientPipe") => this.pipeName = pipeName;
 
         private NamedPipeServerStream? pipe;
         private StreamReader? reader;
@@ -39,11 +41,11 @@ namespace OrbitClient.Scripts
                 try
                 {
                     pipe = new NamedPipeServerStream(
-                      PipeName,
+                      pipeName,
                       PipeDirection.InOut,
                       1,
                       PipeTransmissionMode.Byte,
-                      PipeOptions.Asynchronous
+                      PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly
                     );
 
                     Console.WriteLine("[Orbit Pipe] Waiting for Gorilla Tag...");
@@ -58,6 +60,7 @@ namespace OrbitClient.Scripts
                     {
                         AutoFlush = true
                     };
+                    inboundOffset = inboundCount = 0;
 
                     ModConnected?.Invoke();
 
@@ -97,17 +100,21 @@ namespace OrbitClient.Scripts
             if (reader == null)
                 return;
 
+            var rateWindow = DateTime.UtcNow;
+            var messageCount = 0;
             while (pipe != null && pipe.IsConnected && !cts.IsCancellationRequested)
             {
                 try
                 {
-                    string? line = await reader.ReadLineAsync();
+                    string? line = await ReadBoundedLineAsync(reader);
 
                     if (line == null)
                         break;
 
                     if (string.IsNullOrWhiteSpace(line))
                         continue;
+                    if (DateTime.UtcNow - rateWindow >= TimeSpan.FromSeconds(1)) { rateWindow = DateTime.UtcNow; messageCount = 0; }
+                    if (++messageCount > 30) throw new IOException("Too many pipe messages.");
 
                     OrbitPipeMessage? message = JsonSerializer.Deserialize<OrbitPipeMessage>(
                       line,
@@ -119,6 +126,7 @@ namespace OrbitClient.Scripts
 
                     if (message == null)
                         continue;
+                    message.Type ??= ""; message.Data ??= "";
 
                     Console.WriteLine($"[MOD -> ORBIT] {message.Type}");
 
@@ -138,6 +146,27 @@ namespace OrbitClient.Scripts
                     break;
                 }
             }
+        }
+
+        private readonly char[] inboundBuffer = new char[512];
+        private int inboundOffset, inboundCount;
+        private async Task<string?> ReadBoundedLineAsync(StreamReader input)
+        {
+            var line = new StringBuilder();
+            while (!cts.IsCancellationRequested)
+            {
+                if (inboundOffset == inboundCount)
+                {
+                    inboundCount = await input.ReadAsync(inboundBuffer, 0, inboundBuffer.Length);
+                    inboundOffset = 0;
+                    if (inboundCount == 0) return line.Length == 0 ? null : line.ToString();
+                }
+                var character = inboundBuffer[inboundOffset++];
+                if (character == '\n') return line.ToString().TrimEnd('\r');
+                if (line.Length >= 16384) throw new IOException("Pipe message is too large.");
+                line.Append(character);
+            }
+            return null;
         }
 
         public async Task SendAsync(string type, string data = "")

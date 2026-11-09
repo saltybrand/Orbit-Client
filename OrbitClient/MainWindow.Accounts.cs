@@ -478,6 +478,7 @@ public partial class MainWindow
 
     private void UpdateProfileNav()
     {
+        ObserveCapeAccount();
         if (ProfileNav is null) return;
         var name = ProfileName();
         var signedIn = orbitAccount?.Account is not null;

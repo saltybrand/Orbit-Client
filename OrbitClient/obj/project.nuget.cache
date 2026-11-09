@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "i5xVXfF+upk=",
+  "dgSpecHash": "zDxXBfT8kf0=",
   "success": true,
-  "projectFilePath": "C:\\Projects\\OrbitClient\\OrbitClient\\OrbitClient\\OrbitClient.csproj",
+  "projectFilePath": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\OrbitClient.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\droth\\.nuget\\packages\\birdmessenger\\4.0.0\\birdmessenger.4.0.0.nupkg.sha512",
     "C:\\Users\\droth\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.8\\microsoft.extensions.dependencyinjection.abstractions.10.0.8.nupkg.sha512",

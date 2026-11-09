@@ -65,7 +65,7 @@ public sealed class OrbitAuthException(string message, HttpStatusCode status) : 
     } = status;
 }
 
-public sealed class OrbitAccountService : IDisposable
+public sealed partial class OrbitAccountService : IDisposable
 {
     private readonly HttpClient client;
     private readonly IOrbitCredentialStore credentials;

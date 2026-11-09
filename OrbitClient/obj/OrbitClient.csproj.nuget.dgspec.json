@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Projects\\OrbitClient\\OrbitClient\\OrbitClient\\OrbitClient.csproj": {}
+    "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\OrbitClient.csproj": {}
   },
   "projects": {
-    "C:\\Projects\\OrbitClient\\OrbitClient\\OrbitClient\\OrbitClient.csproj": {
+    "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\OrbitClient.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\OrbitClient\\OrbitClient\\OrbitClient\\OrbitClient.csproj",
+        "projectUniqueName": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\OrbitClient.csproj",
         "projectName": "OrbitClient",
-        "projectPath": "C:\\Projects\\OrbitClient\\OrbitClient\\OrbitClient\\OrbitClient.csproj",
+        "projectPath": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\OrbitClient.csproj",
         "packagesPath": "C:\\Users\\droth\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\OrbitClient\\OrbitClient\\OrbitClient\\obj\\",
+        "outputPath": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

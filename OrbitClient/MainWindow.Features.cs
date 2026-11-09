@@ -113,6 +113,7 @@ public partial class MainWindow
             "Snapshots" => "Keep a recovery point for your mods and settings.",
             "Mod Library" => "Manage your installed mods.",
             "BepInEx" => "Set up your mod loader.",
+            "Capes" => "Choose a cape for your Gorilla Tag companion.",
             _ => "Make Orbit feel like yours."
         };
         PageTitle.Text = page;
@@ -126,6 +127,7 @@ public partial class MainWindow
             case "Mod Library": BuildModLibrary(); break;
             case "Appearance": BuildAppearance(); break;
             case "BepInEx": BuildBepInEx(); break;
+            case "Capes": BuildCapes(); break;
         }
     }
 
@@ -281,7 +283,7 @@ public partial class MainWindow
         catch (Exception ex) { SetFeatureStatus(ex.Message); }
     }
 
-    private async Task InstallModFile(DiscoverMod mod, string? existingPath = null, string? bundledSource = null)
+    private async Task InstallModFile(DiscoverMod mod, string? existingPath = null)
     {
         await WithFileOperation(async root =>
         {
@@ -300,7 +302,7 @@ public partial class MainWindow
                 throw new IOException("Invalid mod destination.");
             if (existingPath == null && File.Exists(destination + ".disabled")) destination += ".disabled";
             WorkspaceService.EnsureNoLinks(destination);
-            var bytes = bundledSource != null ? await File.ReadAllBytesAsync(bundledSource) : await orbitContent.DownloadAsync(uri.AbsoluteUri, 64 * 1024 * 1024, TimeSpan.FromSeconds(preferences.DownloadTimeout));
+            var bytes = await orbitContent.DownloadAsync(uri.AbsoluteUri, 64 * 1024 * 1024, TimeSpan.FromSeconds(preferences.DownloadTimeout));
             using (var pe = new System.Reflection.PortableExecutable.PEReader(new MemoryStream(bytes)))
                 if (!pe.HasMetadata) throw new IOException("The download is not a managed DLL.");
             WorkspaceService.RequireGameClosed();
