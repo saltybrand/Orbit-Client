@@ -75,7 +75,7 @@
               "RelativeDocumentMoniker": "OrbitClient\\Scripts\\ApiManager.cs",
               "ToolTip": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Scripts\\ApiManager.cs",
               "RelativeToolTip": "OrbitClient\\Scripts\\ApiManager.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-11-08T00:12:40.002Z",
               "EditorCaption": ""
@@ -113,8 +113,7 @@
               "RelativeToolTip": "OrbitClient\\MainWindow.xaml.cs",
               "ViewState": "AgIAAM0AAAAAAAAAAAAuwOoAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-08T02:04:55.647Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-08T02:04:55.647Z"
             }
           ]
         }

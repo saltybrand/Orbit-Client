@@ -317,8 +317,8 @@
                                 <Border Background="#1E1227" BorderBrush="#543069" BorderThickness="1" CornerRadius="13" Padding="12,5" HorizontalAlignment="Center" Margin="0,0,0,15">
                                     <TextBlock Text="GORILLA TAG" Foreground="{DynamicResource AccentLight}" FontSize="9" FontWeight="Bold" />
                                 </Border>
-                                <TextBlock Text="READY TO PLAY" Foreground="White" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" />
-                                <TextBlock Text="Launch Gorilla Tag with Orbit." Foreground="#AE9CB6" FontSize="11" HorizontalAlignment="Center" Margin="0,7,0,20" />
+                                <TextBlock x:Name="GameHeading" Text="READY TO PLAY" Foreground="White" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" />
+                                <TextBlock x:Name="GameDescription" Text="Launch Gorilla Tag with Orbit." Foreground="#AE9CB6" FontSize="11" HorizontalAlignment="Center" Margin="0,7,0,20" />
                                 <Button x:Name="LaunchButton" Click="Launch_Click" Style="{StaticResource Primary}" Width="315" Height="62">
                                     <StackPanel>
                                         <TextBlock x:Name="LaunchTitle" Text="LAUNCH GORILLA TAG" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" />

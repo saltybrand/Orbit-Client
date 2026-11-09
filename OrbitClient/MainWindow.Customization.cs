@@ -495,11 +495,7 @@ public partial class MainWindow
         }));
         actions.Children.Add(FeatureButton("Install companion", async () =>
         {
-            await InstallModFile(new()
-            {
-                name = "Orbit companion",
-                download = "orbit://assets/Mods/OrbitClient.dll"
-            });
+            await InstallCompanionAsync(installLoader: true);
             MessageBox.Show(this, "The base companion is installed. Restart the game to load it.", "Orbit");
         }));
         data.Children.Add(actions);

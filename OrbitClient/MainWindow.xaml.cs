@@ -39,6 +39,7 @@ public partial class MainWindow : Window
         InitializeOrbitNetworking();
         InitializeDesktopCapes(startBackgroundServices);
         if (startBackgroundServices) Loaded += MainWindow_Loaded;
+        if (startBackgroundServices) InitializeGameState();
         Closed += (_, _) => windowClosed = true;
         pipeServer.MessageReceived += PipeServer_MessageReceived;
         pipeServer.ModConnected += PipeServer_ModConnected;
@@ -78,6 +79,8 @@ public partial class MainWindow : Window
         if (windowClosed) return;
         var startup = NavPanel.Children.OfType<Button>().FirstOrDefault(x => x.Tag as string == preferences.StartupPage);
         if (startup != null) Nav_Click(startup, new RoutedEventArgs());
+        await AutoInstallCompanionAsync();
+        if (windowClosed) return;
         if (UpdateButton.IsChecked == true)
         {
             await CheckUpdate();
@@ -124,6 +127,11 @@ public partial class MainWindow : Window
             Console.WriteLine($"[MOD -> ORBIT] {message.Type}: {message.Data}");
             switch (message.Type)
             {
+                case "cape_presence_request":
+                case "cape_presence_clear":
+                case "cape_remote_request":
+                    _ = HandleNetworkCapeRequestAsync(message);
+                    break;
                 case "capes_request":
                 case "cape_preview":
                 case "cape_select":
@@ -198,7 +206,9 @@ public partial class MainWindow : Window
     }
     private async void Launch_Click(object sender, RoutedEventArgs e)
     {
-        if (!LaunchButton.IsEnabled || fileOperation.CurrentCount == 0) return;
+        if (!LaunchButton.IsEnabled || fileOperation.CurrentCount == 0 || gameActionInProgress) return;
+        gameActionInProgress = true;
+        LaunchButton.IsEnabled = false;
         try
         {
             IsGtagRunning = WorkspaceService.IsGameRunning();
@@ -220,12 +230,9 @@ public partial class MainWindow : Window
                     MessageBox.Show(this, ex.Message, "Launch check");
                     return;
                 }
-                finally
-                {
-                    LaunchButton.IsEnabled = true;
-                }
             }
             if (fileOperation.CurrentCount == 0) return;
+            IsGtagRunning = WorkspaceService.IsGameRunning();
             if (!IsGtagRunning)
             {
                 LaunchButton.IsEnabled = false;
@@ -233,11 +240,9 @@ public partial class MainWindow : Window
                 LaunchStatus.Text = "STARTING GAME";
                 LaunchButton.Style = (Style)FindResource("StopButton");
                 LaunchGorillaTag();
-                await Task.Delay(900);
-                LaunchTitle.Text = "STOP GAME";
-                LaunchStatus.Text = "GAME IS RUNNING";
-                LaunchButton.IsEnabled = true;
-                if (CloseAppAfterLaunchButton.IsChecked == true)
+                var started = await WaitForGameStateAsync(true, TimeSpan.FromSeconds(45));
+                if (!started && !windowClosed) SetFeatureStatus("Gorilla Tag has not started yet. Check Steam; Orbit will detect it when it opens.");
+                if (started && CloseAppAfterLaunchButton.IsChecked == true)
                 {
                     Application.Current.Shutdown();
                 }
@@ -248,12 +253,8 @@ public partial class MainWindow : Window
                 LaunchTitle.Text = "STOPPING GORILLA TAG";
                 LaunchStatus.Text = "CLOSING GAME";
                 StopGorillaTag();
-                await Task.Delay(900);
-                IsGtagRunning = false;
-                LaunchTitle.Text = "LAUNCH GORILLA TAG";
-                LaunchStatus.Text = "READY TO LAUNCH";
-                LaunchButton.Style = (Style)FindResource("Primary");
-                LaunchButton.IsEnabled = true;
+                if (!await WaitForGameStateAsync(false, TimeSpan.FromSeconds(10)) && !windowClosed)
+                    SetFeatureStatus("Gorilla Tag is still running. Try Stop playing again.");
             }
         }
         catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception or InvalidOperationException)
@@ -263,11 +264,8 @@ public partial class MainWindow : Window
         }
         finally
         {
-            IsGtagRunning = WorkspaceService.IsGameRunning();
-            LaunchTitle.Text = IsGtagRunning ? "STOP GAME" : "LAUNCH GORILLA TAG";
-            LaunchStatus.Text = IsGtagRunning ? "GAME IS RUNNING" : "READY TO LAUNCH";
-            LaunchButton.Style = (Style)FindResource(IsGtagRunning ? "StopButton" : "Primary");
-            LaunchButton.IsEnabled = fileOperation.CurrentCount > 0;
+            gameActionInProgress = false;
+            if (!windowClosed) RefreshGameControls();
         }
     }
     private static void LaunchGorillaTag()

@@ -214,6 +214,7 @@ public partial class MainWindow
 
     private async Task WithFileOperation(Func<string, Task> action)
     {
+        if (gameActionInProgress) throw new IOException("Wait for Gorilla Tag to finish starting or stopping before changing mods.");
         if (!await fileOperation.WaitAsync(0)) throw new IOException("Another mod or snapshot operation is still running.");
         LaunchButton.IsEnabled = false;
         try

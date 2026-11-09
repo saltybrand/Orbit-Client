@@ -24,7 +24,7 @@ public partial class MainWindow
         capeService = new(new OrbitAccountCapeAuthority(() => orbitAccount), workspace.DataRoot, (type, data) => pipeServer.SendAsync(type, data));
         capeRefresh.Tick += async (_, _) => { if (pipeServer.IsConnected) await RefreshDesktopCapesAsync(); };
         if (startRefresh) capeRefresh.Start();
-        Closed += (_, _) => { capeRefresh.Stop(); capeService.Dispose(); };
+        Closed += (_, _) => { capeRefresh.Stop(); capeService.Dispose(); networkCapeLifetime.Cancel(); };
     }
 
     private void ObserveCapeAccount()
@@ -33,6 +33,7 @@ public partial class MainWindow
         var account = orbitAccount?.Account?.Id ?? "";
         if (account == capeObservedAccount) return;
         capeObservedAccount = account;
+        _ = pipeServer.SendAsync("cape_network_reset", "");
         capeArtwork.Clear(); capeGalleryGeneration++; capeFocusedId = "";
         capeCatalogLoaded = false; capeStatus = "";
         _ = capeService.AccountChangedAsync();
