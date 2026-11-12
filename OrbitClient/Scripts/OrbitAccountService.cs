@@ -47,11 +47,13 @@ public sealed class OrbitAccountConfig
             throw new IOException("Enter the HTTPS Supabase project URL, with no extra path.");
         if (string.IsNullOrWhiteSpace(PublishableKey) || !PublishableKey.StartsWith("sb_publishable_", StringComparison.Ordinal) || PublishableKey.Any(char.IsWhiteSpace))
             throw new IOException("Use a publishable key beginning sb_publishable_. Never use a secret key.");
+        OrbitNetworkPolicy.ValidateHttpsUri(ProjectUrl.Trim());
         AccountPageUrl ??= "";
         if (AccountPageUrl.Length > 0 && (!Uri.TryCreate(AccountPageUrl, UriKind.Absolute, out
               var page) ||
             page.Scheme != "https" || page.IsLoopback || page.UserInfo.Length > 0 || page.Query.Length > 0 || page.Fragment.Length > 0))
             throw new IOException("Enter a public HTTPS account page URL without localhost, a query or fragment.");
+        if (AccountPageUrl.Length > 0) OrbitNetworkPolicy.ValidateHttpsUri(AccountPageUrl);
     }
 }
 
@@ -95,14 +97,11 @@ public sealed partial class OrbitAccountService : IDisposable
         Config = config;
         Config.ProjectUrl = config.ProjectUrl.Trim().TrimEnd('/');
         credentials = store ?? new OrbitCredentialStore();
-        client = handler is null ? new HttpClient(new HttpClientHandler
-        {
-            AllowAutoRedirect = false
-        }) : new HttpClient(handler);
+        client = new HttpClient(handler ?? OrbitNetworkPolicy.CreateHandler());
         client.BaseAddress = new Uri(Config.ProjectUrl + "/");
         client.Timeout = TimeSpan.FromSeconds(25);
         client.DefaultRequestHeaders.Add("apikey", Config.PublishableKey);
-        submissionFiles = new HttpClient(submissionHandler ?? new HttpClientHandler { AllowAutoRedirect = false })
+        submissionFiles = new HttpClient(submissionHandler ?? OrbitNetworkPolicy.CreateHandler())
         { BaseAddress = client.BaseAddress, Timeout = TimeSpan.FromMinutes(3) };
         submissionFiles.DefaultRequestHeaders.Add("apikey", Config.PublishableKey);
     }
@@ -143,16 +142,23 @@ public sealed partial class OrbitAccountService : IDisposable
                 code = Text(error.RootElement, "error_code");
             }
             catch (JsonException) { }
+            // Existing and nonexistent addresses must have the same successful UI flow.
+            if ((path.StartsWith("auth/v1/signup", StringComparison.Ordinal)
+                || path.StartsWith("auth/v1/resend", StringComparison.Ordinal)
+                || path.StartsWith("auth/v1/recover", StringComparison.Ordinal))
+                && response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity
+                && code is "user_already_exists" or "email_exists" or "user_not_found" or "email_not_found")
+                return default;
             var message = code
             switch
             {
-                "email_not_confirmed" => "Confirm your email before signing in.",
+                "email_not_confirmed" => "Sign-in failed. Check your email and password, and confirm your email if needed.",
                 "otp_expired" => "That confirmation is invalid or has expired. Click Resend confirmation and use the newest email.",
                 "captcha_failed" => "A security check is required. Try signing in through your browser.",
                 "weak_password" => "Choose a stronger password, at least 12 characters.",
                 "provider_disabled" => "Discord sign-in is unavailable. Use email instead.",
                 _ when (int)response.StatusCode == 429 => "Too many attempts. Wait a little before trying again.",
-                _ when path.Contains("grant_type=password") => "Sign-in failed. Check your email and password.",
+                _ when path.Contains("grant_type=password") => "Sign-in failed. Check your email and password, and confirm your email if needed.",
                 _ when response.StatusCode == HttpStatusCode.Conflict => "That username is already taken. Choose another.",
                 _ when OrbitHttp.IsTransient(response.StatusCode) => "The account service is temporarily unavailable. Try again later.",
                 _ when path.StartsWith("rest/") => "Your profile could not be saved or loaded. Try again.",

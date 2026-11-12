@@ -41,14 +41,8 @@ public sealed class OrbitContentService : IDisposable
     {
         config.Validate();
         ProjectUrl = config.ProjectUrl.Trim().TrimEnd('/');
-        api = apiHandler is null ? new(new HttpClientHandler
-        {
-            AllowAutoRedirect = false
-        }) : new(apiHandler);
-        assets = assetHandler is null ? new(new HttpClientHandler
-        {
-            AllowAutoRedirect = false
-        }) : new(assetHandler);
+        api = new(apiHandler ?? OrbitNetworkPolicy.CreateHandler());
+        assets = new(assetHandler ?? OrbitNetworkPolicy.CreateHandler());
         api.BaseAddress = new Uri(ProjectUrl + "/");
         api.DefaultRequestHeaders.Add("apikey", config.PublishableKey);
         api.Timeout = Timeout.InfiniteTimeSpan;
@@ -223,10 +217,7 @@ public sealed class OrbitContentService : IDisposable
 
     private static Uri ValidateDownloadUri(string source)
     {
-        if (!Uri.TryCreate(source, UriKind.Absolute, out
-            var uri) || uri.Scheme != "https" || uri.UserInfo.Length != 0 || uri.Fragment.Length != 0)
-            throw new IOException("A secure HTTPS asset URL is required.");
-        return uri;
+        return OrbitNetworkPolicy.ValidateHttpsUri(source);
     }
 
     public void Dispose()

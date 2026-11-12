@@ -1,5 +1,5 @@
 ﻿OrbitClient
-1.0.11.0
+1.0.12.0
 
 winexe
 C#
@@ -12,7 +12,7 @@ TRACE;RELEASE;NET;NET10_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0
 C:\Projects\OrbitClient\OrbitClient\Orbit Client\OrbitClient\App.xaml
 21188894407
 1-1521088764
-54-2025286294
+552051894225
 225-852041076
 MainWindow.xaml;Themes\PurpleTheme.xaml;
 

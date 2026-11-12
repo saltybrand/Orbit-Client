@@ -240,7 +240,7 @@ public partial class MainWindow
                         await service.SignUpAsync(orbitEmail, secret);
                         orbitRegister = false;
                         orbitConfirmationPending = true;
-                        BuildOrbitAccount("Check your email and enter its confirmation code below. If the email has a button instead, copy that button's link into the same field.");
+                        BuildOrbitAccount("If this address can be registered, check your email for a confirmation code or link. If you already have an account, sign in or use password recovery.");
                     }
                     else
                     {
@@ -347,7 +347,7 @@ public partial class MainWindow
                 await RequireOrbitAccount().ResendConfirmationAsync(email.Text.Trim());
                 orbitEmail = email.Text.Trim();
                 orbitConfirmationPending = true;
-                BuildOrbitAccount("New confirmation email sent. Enter its code below, or copy and paste its confirmation button's link.");
+                BuildOrbitAccount("If this address needs confirmation, check your email for a new code or link.");
             }));
             orbitForm.Children.Add(help);
             orbitForm.Children.Add(new Expander { Header = "Confirm email", IsExpanded = orbitConfirmationPending,
