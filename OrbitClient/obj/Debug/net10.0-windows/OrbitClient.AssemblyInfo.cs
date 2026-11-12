@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © 2026 Orbit Client")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("A desktop launcher and profile manager for Gorilla Tag.")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+468c65abb9429ec0969a31163a54bb4502391e82")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+675c5ae4aa92e61e43a2c9ed89ccfe578f0fde2e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Orbit Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrbitClient")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
