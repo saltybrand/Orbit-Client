@@ -14,5 +14,6 @@ namespace OrbitClient.DataModels
         public string category { get; set; } = "";
         public string image { get; set; } = "";
         public string download { get; set; } = "";
+        public string sha256 { get; set; } = "";
     }
 }

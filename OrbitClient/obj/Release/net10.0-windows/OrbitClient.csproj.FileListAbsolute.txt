@@ -85,3 +85,5 @@ C:\Projects\OrbitClient\OrbitClient\Orbit Client\OrbitClient\obj\Release\net10.0
 C:\Projects\OrbitClient\OrbitClient\Orbit Client\OrbitClient\obj\Release\net10.0-windows\OrbitClient.genruntimeconfig.cache
 C:\Projects\OrbitClient\OrbitClient\Orbit Client\OrbitClient\obj\Release\net10.0-windows\ref\OrbitClient.dll
 C:\Projects\OrbitClient\OrbitClient\Orbit Client\OrbitClient\bin\Release\net10.0-windows\OrbitClient.exe
+C:\Projects\OrbitClient\OrbitClient\Orbit Client\OrbitClient\obj\Release\net10.0-windows\GeneratedInternalTypeHelper.g.cs
+C:\Projects\OrbitClient\OrbitClient\Orbit Client\OrbitClient\obj\Release\net10.0-windows\OrbitClient_MarkupCompile.lref

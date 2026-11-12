@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
@@ -10,6 +11,33 @@ public sealed class OrbitCompanionInstaller
     public const string DownloadSource = "orbit://assets/Mods/OrbitClient.dll";
     private const string PluginGuid = "com.Meep.gorillatag.OrbitClient";
 
+    /// <summary>Uses the newer validated build from the release and asset host.</summary>
+    public static async Task<byte[]> DownloadLatestAsync(Func<Task<byte[]>> download, byte[]? bundled = null)
+    {
+        if (bundled == null)
+        {
+            using var resource = typeof(OrbitCompanionInstaller).Assembly.GetManifestResourceStream("OrbitClient.BundledCompanion.dll");
+            if (resource != null)
+            {
+                using var buffer = new MemoryStream();
+                await resource.CopyToAsync(buffer).ConfigureAwait(false);
+                bundled = buffer.ToArray();
+            }
+        }
+        var bundledVersion = bundled == null ? null : ValidateCompanion(bundled);
+        try
+        {
+            var published = await download().ConfigureAwait(false);
+            var publishedVersion = ValidateCompanion(published);
+            return bundledVersion != null && bundledVersion > publishedVersion ? bundled! : published;
+        }
+        catch (Exception ex) when (bundled != null && ex is IOException or HttpRequestException or OperationCanceledException)
+        {
+            Console.WriteLine("[Orbit Companion] Using the bundled companion: " + ex.Message);
+            return bundled!;
+        }
+    }
+
     public async Task<bool> InstallAsync(string gamePath, Func<Task<byte[]>> download, Action? beforeWrite = null)
     {
         var root = WorkspaceService.VerifyGame(gamePath);
@@ -18,13 +46,17 @@ public sealed class OrbitCompanionInstaller
             throw new IOException("Install BepInEx in Settings before Orbit can install its companion automatically.");
         var destination = FindDestination(root);
         var bytes = await download().ConfigureAwait(false);
-        ValidateCompanion(bytes);
+        var incomingVersion = ValidateCompanion(bytes);
         WorkspaceService.RequireGameClosed();
         WorkspaceService.EnsureNoLinks(destination);
         if (File.Exists(destination))
         {
             var installed = await File.ReadAllBytesAsync(destination).ConfigureAwait(false);
             if (bytes.AsSpan().SequenceEqual(installed)) return false;
+            Version? installedVersion = null;
+            try { installedVersion = ValidateCompanion(installed); }
+            catch (IOException) { /* A damaged installation can be repaired. */ }
+            if (installedVersion != null && installedVersion > incomingVersion) return false;
         }
         beforeWrite?.Invoke();
         WorkspaceService.RequireGameClosed();
@@ -49,7 +81,7 @@ public sealed class OrbitCompanionInstaller
         return matches.FirstOrDefault() ?? Path.Combine(plugins, "OrbitClient.dll");
     }
 
-    private static void ValidateCompanion(byte[] bytes)
+    private static Version ValidateCompanion(byte[] bytes)
     {
         if (bytes.Length == 0 || bytes.Length > 64 * 1024 * 1024) throw new IOException("Invalid companion download size.");
         try
@@ -68,7 +100,7 @@ public sealed class OrbitCompanionInstaller
                 var type = metadata.GetTypeReference((TypeReferenceHandle)constructor.Parent);
                 if (metadata.GetString(type.Namespace) != "BepInEx" || metadata.GetString(type.Name) != "BepInPlugin") continue;
                 var value = metadata.GetBlobReader(attribute.Value);
-                if (value.ReadUInt16() == 1 && value.ReadSerializedString() == PluginGuid) return;
+                if (value.ReadUInt16() == 1 && value.ReadSerializedString() == PluginGuid) return metadata.GetAssemblyDefinition().Version;
             }
             throw new BadImageFormatException();
         }

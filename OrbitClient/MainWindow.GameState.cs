@@ -24,10 +24,11 @@ public partial class MainWindow
     {
         IsGtagRunning = running;
         if (gameActionInProgress) return;
-        GameHeading.Text = running ? "NOW PLAYING" : "READY TO PLAY";
-        GameDescription.Text = running ? "Gorilla Tag is open. You can stop playing here." : "Launch Gorilla Tag with Orbit.";
-        LaunchTitle.Text = running ? "STOP PLAYING" : "LAUNCH GORILLA TAG";
-        LaunchStatus.Text = running ? "GORILLA TAG IS RUNNING" : "READY TO LAUNCH";
+        GameHeading.Text = "Gorilla Tag";
+        GameDescription.Text = running ? "Gorilla Tag is open. You can stop playing here." : "Your game, mods, and next session in one place.";
+        LaunchTitle.Text = running ? "Stop playing" : "Launch Gorilla Tag";
+        LaunchStatus.Visibility = Visibility.Collapsed;
+        LaunchButton.ToolTip = running ? "Close Gorilla Tag" : "Launch Gorilla Tag through Steam";
         LaunchButton.Style = (Style)FindResource(running ? "StopButton" : "Primary");
         LaunchButton.IsEnabled = fileOperation.CurrentCount > 0;
     }

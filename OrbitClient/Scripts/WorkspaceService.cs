@@ -52,7 +52,7 @@ public sealed class ClientPreferences
     {
         get;
         set;
-    } = 225;
+    } = 200;
     public bool ShowNavLabels
     {
         get;
@@ -62,7 +62,7 @@ public sealed class ClientPreferences
     {
         get;
         set;
-    } = 14;
+    } = 12;
     public double SurfaceOpacity
     {
         get;

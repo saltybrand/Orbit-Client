@@ -16,6 +16,7 @@ public sealed class OrbitContentService : IDisposable
     public
     const string Bucket = "orbit-assets";
     private static readonly HashSet<string> Documents = new(StringComparer.Ordinal) {
+    "discover",
     "news",
     "mods",
     "updates",
@@ -144,6 +145,13 @@ public sealed class OrbitContentService : IDisposable
     {
         if (string.IsNullOrWhiteSpace(source)) return source;
         if (source.StartsWith("orbit://assets/", StringComparison.Ordinal)) return StorageUrl(source[15..]);
+        if (source.StartsWith("orbit://approved-mods/", StringComparison.Ordinal))
+        {
+            var parts = source[22..].Split('/');
+            if (parts.Length != 2 || !Guid.TryParseExact(parts[0], "D", out _) || !parts[1].EndsWith(".dll",StringComparison.Ordinal) || !Guid.TryParseExact(parts[1][..^4],"D",out _))
+                throw new IOException("Invalid approved mod download path.");
+            return ProjectUrl + "/storage/v1/object/public/orbit-approved-mods/" + string.Join('/', parts.Select(Uri.EscapeDataString));
+        }
         if (Uri.TryCreate(source, UriKind.Absolute, out
             var uri) && uri.Host.Equals("orbitclientapi.netlify.app", StringComparison.OrdinalIgnoreCase))
             return StorageUrl(Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/')));
@@ -174,6 +182,43 @@ public sealed class OrbitContentService : IDisposable
             return await OrbitHttp.ReadBoundedAsync(response, maximumBytes, deadline.Token).ConfigureAwait(false);
         }
         throw new IOException("Too many asset redirects.");
+    }
+
+    public async Task<List<OrbitClient.DataModels.DiscoverMod>> ReadPublishedModsAsync(CancellationToken cancellationToken = default)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromSeconds(20));
+        var mods = new List<OrbitClient.DataModels.DiscoverMod>();
+        for (var page = 0; page < 10; page++)
+        {
+            using var response = await OrbitHttp.GetAsync(api, () => new HttpRequestMessage(HttpMethod.Get,
+                "rest/v1/rpc/orbit_published_mods?requested_page=" + page), deadline.Token).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) throw new IOException("The community catalog could not be loaded.");
+            var bytes = await OrbitHttp.ReadBoundedAsync(response, 1024 * 1024, deadline.Token).ConfigureAwait(false);
+            var rows = JsonSerializer.Deserialize<List<OrbitClient.DataModels.DiscoverMod>>(bytes, Json) ?? throw new IOException("Invalid community catalog.");
+            foreach (var mod in rows)
+            {
+                if (mod is null || !mod.id.StartsWith("submission-", StringComparison.Ordinal)
+                    || !Guid.TryParseExact(mod.id[11..], "D", out var id)
+                    || !mod.download.StartsWith("orbit://approved-mods/",StringComparison.Ordinal)
+                    || mod.download[22..].Split('/') is not [var binary,var filename]
+                    || !Guid.TryParseExact(binary,"D",out _) || filename!=id.ToString("D")+".dll"
+                    || !System.Text.RegularExpressions.Regex.IsMatch(mod.sha256, "^[a-f0-9]{64}$"))
+                    throw new IOException("Invalid community mod listing.");
+                mods.Add(mod);
+            }
+            if (rows.Count < 100) return mods;
+        }
+        return mods;
+    }
+
+    public static void VerifyModDownload(OrbitClient.DataModels.DiscoverMod mod, byte[] bytes)
+    {
+        if (mod.id.StartsWith("submission-", StringComparison.Ordinal) && string.IsNullOrWhiteSpace(mod.sha256))
+            throw new IOException("The community mod is missing its approved file hash.");
+        if (!string.IsNullOrWhiteSpace(mod.sha256) && (!System.Text.RegularExpressions.Regex.IsMatch(mod.sha256, "^[a-f0-9]{64}$")
+            || Convert.ToHexStringLower(SHA256.HashData(bytes)) != mod.sha256))
+            throw new IOException("The downloaded DLL does not match the approved file. Installation was stopped.");
     }
 
     private static Uri ValidateDownloadUri(string source)

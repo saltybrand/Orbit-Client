@@ -30,7 +30,8 @@ internal static class MaterialSymbols
             Height = size,
             Stretch = Stretch.Uniform,
             VerticalAlignment = VerticalAlignment.Center,
-            IsHitTestVisible = false
+            IsHitTestVisible = false,
+            RenderTransform = new TranslateTransform(0, -.5)
         };
         icon.SetBinding(System.Windows.Shapes.Shape.FillProperty, new Binding("Foreground")
         { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(Button), 1), FallbackValue = Brushes.White });

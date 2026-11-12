@@ -16,10 +16,10 @@ public partial class MainWindow
         content.Children.Add(FeatureText("Cape key", 13));
         var input = new PasswordBox
         {
-            FontSize = 16, Padding = new Thickness(14, 12, 14, 12), MaxLength = 256,
+            FontSize = 16, Padding = new Thickness(10, 8, 10, 8), MaxLength = 256,
             Background = (Brush)FindResource("ControlSurface"), Foreground = Brushes.White,
             BorderBrush = new SolidColorBrush(Color.FromRgb(62, 47, 74)), BorderThickness = new Thickness(1),
-            Margin = new Thickness(0, 2, 0, 16), MaxWidth = 620, HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(0, 2, 0, 10), MaxWidth = 620, HorizontalAlignment = HorizontalAlignment.Left,
             MinWidth = 300
         };
         System.Windows.Automation.AutomationProperties.SetName(input, "Cape redemption key");

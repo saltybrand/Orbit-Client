@@ -17,7 +17,7 @@ public partial class MainWindow : Window
 {
     private static readonly Brush ActiveBackground = new SolidColorBrush(Color.FromRgb(40, 23, 55));
     private static readonly Brush ActiveForeground = new SolidColorBrush(Color.FromRgb(248, 242, 252));
-    private static readonly Brush InactiveForeground = new SolidColorBrush(Color.FromRgb(150, 139, 157));
+    private static readonly Brush InactiveForeground = new SolidColorBrush(Color.FromRgb(184, 175, 191));
     public static string steamapiKey = "";
     public static string steamId = "";
     public
@@ -35,6 +35,8 @@ public partial class MainWindow : Window
         if (workspaceOverride is not null) workspace = workspaceOverride;
         InitializeComponent();
         InitializeFeatures();
+        InitializePolish();
+        ClipRoundedSurface(HomeHero);
         InitializeOrbitAccounts();
         InitializeOrbitNetworking();
         InitializeDesktopCapes(startBackgroundServices);
@@ -50,56 +52,37 @@ public partial class MainWindow : Window
     {
         if (startupStarted) return;
         startupStarted = true;
+        var startup = NavPanel.Children.OfType<Button>().FirstOrDefault(x => x.Tag as string == preferences.StartupPage);
+        if (startup != null) Nav_Click(startup, new RoutedEventArgs());
+
         var restoreProfile = RestoreOrbitAccountAsync();
         try
         {
-            SetLoadingProgress("Loading Steam account...", 15);
             LoadAccounts();
             LoadCurrentSteamAccount();
-            SetLoadingProgress("Loading Gorilla Tag...", 35);
             LoadGtagVersion();
-            SetLoadingProgress("Loading playtime...", 55);
             LoadLocalPlaytime();
-            SetLoadingProgress("Loading Orbit services...", 75);
+            SetHomeMetadataLoading(false);
             try
             {
                 await Task.WhenAll(CheckStatus(), LoadNewsData());
             }
             catch { }
             UpdateText.Text = $"You are on Version {currentVersion}";
-            SetLoadingProgress("Ready", 100);
         }
         catch (Exception ex)
         {
             Console.WriteLine("[Orbit] Startup error: " + ex);
         }
-        LoadingOverlay.Visibility = Visibility.Collapsed;
-        LoadingOverlay.IsHitTestVisible = false;
+        SetHomeMetadataLoading(false);
         await restoreProfile;
         if (windowClosed) return;
-        var startup = NavPanel.Children.OfType<Button>().FirstOrDefault(x => x.Tag as string == preferences.StartupPage);
-        if (startup != null) Nav_Click(startup, new RoutedEventArgs());
         await AutoInstallCompanionAsync();
         if (windowClosed) return;
         if (UpdateButton.IsChecked == true)
         {
             await CheckUpdate();
         }
-    }
-    private void SetLoadingProgress(string status, double percent)
-    {
-        LoadingStatus.Text = status;
-        LoadingPercent.Text = $"{percent:0}%";
-        DoubleAnimation animation = new DoubleAnimation
-        {
-            To = 240 * (percent / 100.0),
-            Duration = TimeSpan.FromMilliseconds(250),
-            EasingFunction = new CubicEase
-            {
-                EasingMode = EasingMode.EaseOut
-            }
-        };
-        LoadingProgressBar.BeginAnimation(FrameworkElement.WidthProperty, animation);
     }
     private async Task StartPipeServerSafe()
     {
@@ -124,7 +107,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.BeginInvoke(() =>
         {
-            Console.WriteLine($"[MOD -> ORBIT] {message.Type}: {message.Data}");
+            Console.WriteLine($"[MOD -> ORBIT] {message.Type}");
             switch (message.Type)
             {
                 case "cape_presence_request":
@@ -171,6 +154,8 @@ public partial class MainWindow : Window
     private void Nav_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button selected || selected.Tag is not string page) return;
+        submissionViewGeneration++;
+        CancelNewsTransition();
         foreach (Button button in NavPanel.Children.OfType<Button>().Append(ProfileNav))
         {
             button.Background = Brushes.Transparent;
@@ -192,10 +177,10 @@ public partial class MainWindow : Window
         {
             "Accounts" => ("Profile", "Sign in and manage your Orbit profile."),
             "Steam accounts" => ("Steam accounts", "Choose the Steam account to launch your game."),
-            "Discover" => ("Discover", "Discover Gorilla Tag mods."),
+            "Discover" => ("Discover", "Coming soon"),
             "Settings" => ("Settings", "Configure Orbit Client and your game."),
             "News" => ("News", "Updates, stories, and guides from Orbit."),
-            _ => ("Home", "Main Menu.")
+            _ => ("Home", "")
         };
         if (page == "Discover" && discoverMods.Count == 0) _ = LoadDiscoverMods();
         if (page is "Snapshots"
@@ -203,12 +188,16 @@ public partial class MainWindow : Window
           or "BepInEx"
           or "Appearance"
           or "Capes") OpenFeaturePage(page);
+        AnimateActivePage();
     }
     private async void Launch_Click(object sender, RoutedEventArgs e)
     {
         if (!LaunchButton.IsEnabled || fileOperation.CurrentCount == 0 || gameActionInProgress) return;
         gameActionInProgress = true;
         LaunchButton.IsEnabled = false;
+        LaunchTitle.Text = "Preparing Gorilla Tag…";
+        LaunchProgress.IsIndeterminate = true;
+        LaunchProgress.Visibility = Visibility.Visible;
         try
         {
             IsGtagRunning = WorkspaceService.IsGameRunning();
@@ -236,9 +225,11 @@ public partial class MainWindow : Window
             if (!IsGtagRunning)
             {
                 LaunchButton.IsEnabled = false;
-                LaunchTitle.Text = "LAUNCHING GAME";
-                LaunchStatus.Text = "STARTING GAME";
-                LaunchButton.Style = (Style)FindResource("StopButton");
+                LaunchTitle.Text = "Launching Gorilla Tag…";
+                LaunchProgress.Visibility = Visibility.Visible;
+                LaunchProgress.IsIndeterminate = true;
+
+                LaunchButton.Style = (Style)FindResource("Primary");
                 LaunchGorillaTag();
                 var started = await WaitForGameStateAsync(true, TimeSpan.FromSeconds(45));
                 if (!started && !windowClosed) SetFeatureStatus("Gorilla Tag has not started yet. Check Steam; Orbit will detect it when it opens.");
@@ -250,8 +241,10 @@ public partial class MainWindow : Window
             else
             {
                 LaunchButton.IsEnabled = false;
-                LaunchTitle.Text = "STOPPING GORILLA TAG";
-                LaunchStatus.Text = "CLOSING GAME";
+                LaunchTitle.Text = "Stopping Gorilla Tag…";
+                LaunchProgress.Visibility = Visibility.Visible;
+                LaunchProgress.IsIndeterminate = true;
+
                 StopGorillaTag();
                 if (!await WaitForGameStateAsync(false, TimeSpan.FromSeconds(10)) && !windowClosed)
                     SetFeatureStatus("Gorilla Tag is still running. Try Stop playing again.");
@@ -265,6 +258,8 @@ public partial class MainWindow : Window
         finally
         {
             gameActionInProgress = false;
+            LaunchProgress.IsIndeterminate = false;
+            LaunchProgress.Visibility = Visibility.Hidden;
             if (!windowClosed) RefreshGameControls();
         }
     }
@@ -344,10 +339,10 @@ public partial class MainWindow : Window
         foreach (var account in matches)
         {
             var active = string.Equals(account.AccountName, activeSteamAccount, StringComparison.OrdinalIgnoreCase);
-            var grid = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+            var grid = new Grid { Margin = new Thickness(0, 0, 0, 8) };
             grid.ColumnDefinitions.Add(new ColumnDefinition());
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var info = new StackPanel { Margin = new Thickness(0, 0, 12, 0) };
+            var info = new StackPanel { Margin = new Thickness(0, 0, 8, 0) };
             info.Children.Add(FeatureText(string.IsNullOrWhiteSpace(account.PersonalName) ? account.AccountName : account.PersonalName, 18));
             info.Children.Add(FeatureText(account.AccountName + (active ? " · Active" : ""), 12, true));
             var button = new Button
@@ -501,6 +496,7 @@ public partial class MainWindow : Window
     {
         if (newsLoading) return;
         newsLoading = true;
+        if (newsItems.Count == 0) { SetHomeNewsLoading(true); ShowCatalogSkeletons(FeaturedNewsPanel, 2); }
         try
         {
             var bundled = new List<NewsData>();
@@ -515,7 +511,7 @@ public partial class MainWindow : Window
             {
                 ErrorManager.LogError("Bundled news unavailable: " + ex.Message);
             }
-            if (newsItems.Count == 0) ShowNews(bundled);
+            if (newsItems.Count == 0 && bundled.Count > 0) ShowNews(bundled);
             NewsStatusText.Text = "Checking for new articles…";
             var result = await orbitContent.ReadAsync<List<NewsData>>("news");
             var remote = result.Value.Where(x => x != null && !string.IsNullOrWhiteSpace(x.title)).ToList();
@@ -542,12 +538,16 @@ public partial class MainWindow : Window
         finally
         {
             newsLoading = false;
+            SetHomeNewsLoading(false);
+            if (newsItems.Count == 0) { FeaturedNewsPanel.Children.Clear(); News1Title.Text = "No release notes available"; News1Desc.Text = "Open News to refresh and try again."; }
         }
     }
 
     private void ShowNews(IEnumerable<NewsData> items)
     {
         newsItems = items.Where(x => x != null).OrderBy(x => x.placement > 0 ? x.placement : int.MaxValue).ThenByDescending(x => x.PublishedDate).ToList();
+        SetHomeNewsLoading(false);
+        MoreNewsHeading.Visibility = newsItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
         NewsListPanel.Children.Clear();
         FeaturedNewsPanel.Children.Clear();
         NewsDetailsOverlay.Visibility = Visibility.Collapsed;
@@ -563,13 +563,14 @@ public partial class MainWindow : Window
         FeaturedNewsPanel.Children.Add(CreateNewsCard(featured, true));
         foreach (var item in newsItems.Skip(1)) NewsListPanel.Children.Add(CreateNewsCard(item));
         ResizeNewsCards();
+        RevealLoadedContent(FeaturedNewsPanel);
     }
 
     private static TextBlock NewsText(string text, double size, string color, FontWeight weight =
       default) => new()
       {
-          Text = text,
-          FontSize = size,
+          Text = size >= 18 ? TextRhythm.Heading(text) : text,
+          FontSize = Math.Max(12, size),
           Foreground = (Brush)new BrushConverter().ConvertFromString(color)!,
           FontWeight = weight ==
           default ? FontWeights.Normal : weight,
@@ -614,21 +615,18 @@ public partial class MainWindow : Window
         };
         System.Windows.Automation.AutomationProperties.SetName(button, $"Read {item.title}");
         var grid = new Grid();
-        var picture = CreateNewsImage(item, featured ? 235 : 150);
+        var picture = CreateNewsImage(item, featured ? 190 : 130);
         var content = new StackPanel
         {
-            Margin = new Thickness(18)
+            Margin = new Thickness(12)
         };
-        content.Children.Add(NewsText(featured ? $"FEATURED ARTICLE · {item.category.ToUpperInvariant()}" : item.category.ToUpperInvariant(), 10, "#C69CE4", FontWeights.SemiBold));
-        var title = NewsText(item.title, featured ? 26 : 18, "#F4EFF7", FontWeights.SemiBold);
-        title.Margin = new Thickness(0, 9, 0, 8);
+        content.Children.Add(NewsText($"{item.category} · {item.DisplayDate}", 12, "#B8AFBF"));
+        var title = NewsText(item.title, featured ? 24 : 18, "#F4EFF7", FontWeights.SemiBold);
+        title.Margin = new Thickness(0, 6, 0, 6);
         content.Children.Add(title);
         var description = NewsText(item.description, 13, "#B8ACBF");
         description.LineHeight = 20;
         content.Children.Add(description);
-        var date = NewsText(item.DisplayDate, 11, "#A99AB2");
-        date.Margin = new Thickness(0, 18, 0, 0);
-        content.Children.Add(date);
         if (featured)
         {
             grid.ColumnDefinitions.Add(new ColumnDefinition());
@@ -647,7 +645,9 @@ public partial class MainWindow : Window
         }
         grid.Children.Add(picture);
         grid.Children.Add(content);
-        button.Content = grid;
+        var articleSurface = new Border { CornerRadius = new CornerRadius(11), Child = grid };
+        ClipRoundedSurface(articleSurface);
+        button.Content = articleSurface;
         button.Click += (_, _) => { activeNewsCard = button; OpenNewsDetails(item); };
         return button;
     }
@@ -663,17 +663,21 @@ public partial class MainWindow : Window
 
     private void OpenNewsDetails(NewsData item)
     {
-        NewsDetailsTitle.Text = item.title;
+        NewsDetailsTitle.Text = TextRhythm.Heading(item.title);
         NewsDetailsDescription.Text = item.description;
         NewsDetailsDate.Text = $"{item.category}  ·  {item.DisplayDate}";
         NewsDetailsContent.Text = string.IsNullOrWhiteSpace(item.details) ? item.description + "\n\nNo additional article text has been published yet." : item.details;
-        NewsDetailsImageHost.Child = CreateNewsImage(item, 330);
+        var destination = CreateNewsImage(item, 240);
+        NewsDetailsImageHost.Child = destination;
         NewsDetailsOverlay.Visibility = Visibility.Visible;
         NewsDetailsScroll.ScrollToTop();
         NewsBackButton.Focus();
+        var source = activeNewsCard is null ? null : VisualDescendants(activeNewsCard).OfType<Image>().FirstOrDefault();
+        TransitionNewsArtwork(source, destination);
     }
     private void CloseNewsDetails_Click(object sender, RoutedEventArgs e)
     {
+        CancelNewsTransition();
         NewsDetailsOverlay.Visibility = Visibility.Collapsed;
         activeNewsCard?.Focus();
     }
@@ -729,12 +733,12 @@ public partial class MainWindow : Window
             var status = (await orbitContent.ReadAsync<JsonElement>("status", false)).Value;
             bool online = status.GetProperty("online").GetBoolean();
             StatusCircle.Fill = online ? Brushes.LimeGreen : Brushes.Red;
-            StatusText.Text = online ? "Service Online" : "Service Offline";
+            StatusText.Text = online ? "Services online" : "Services offline";
         }
         catch
         {
             StatusCircle.Fill = Brushes.Red;
-            StatusText.Text = "Service Offline";
+            StatusText.Text = "Services offline";
         }
     }
     private void Browse_Click(object sender, RoutedEventArgs e)
@@ -788,7 +792,8 @@ public partial class MainWindow : Window
     private int discoverPage;
     private int discoverPageSize = 8;
     private int discoverSort;
-    private bool discoverLoading;
+    private bool discoverLoading = false;
+    private bool discoverRevealPending;
     private bool updatingDiscoverFilters;
     private string discoverLoadNotice = "";
 
@@ -796,29 +801,11 @@ public partial class MainWindow : Window
 
     private static string DiscoverAuthor(DiscoverMod mod) => mod.author?.Trim() ?? "";
 
-    public async Task LoadDiscoverMods()
+    public Task LoadDiscoverMods()
     {
-        if (discoverLoading) return;
-        discoverLoading = true;
-        DiscoverStatusText.Text = "Loading mods…";
-        try
-        {
-            var result = await orbitContent.ReadAsync<List<DiscoverMod>>("mods");
-            discoverMods = result.Value.Where(x => x != null && !string.IsNullOrWhiteSpace(x.name)).ToList();
-            discoverLoadNotice = result.IsCached ? " · Saved catalog" : "";
-            BuildDiscoverFilters();
-            ApplyDiscoverFilters();
-        }
-        catch (Exception ex)
-        {
-            discoverLoadNotice = discoverMods.Count > 0 ? " · Refresh failed; showing previous results." : " · Unable to load catalog. Try Refresh.";
-            ApplyDiscoverFilters();
-            ErrorManager.LogError($"Discover error: " + ex);
-        }
-        finally
-        {
-            discoverLoading = false;
-        }
+        discoverMods.Clear();
+        DiscoverModsPanel.Children.Clear();
+        return Task.CompletedTask;
     }
 
     private void BuildDiscoverFilters()
@@ -830,10 +817,12 @@ public partial class MainWindow : Window
             var authors = discoverMods.Select(DiscoverAuthor).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
             discoverCategories.IntersectWith(categories);
             discoverAuthors.IntersectWith(authors);
+            categories = OrderDiscoverFilters(categories, discoverSettings.categories);
+            authors = OrderDiscoverFilters(authors, discoverSettings.authors);
             AddFilters(DiscoverCategoryFilters, categories, discoverCategories, true);
             AddFilters(DiscoverAuthorFilters, authors, discoverAuthors, false);
-            DiscoverCategorySection.Visibility = categories.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            DiscoverAuthorSection.Visibility = authors.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            DiscoverCategorySection.Visibility = discoverSettings.showCategories && categories.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            DiscoverAuthorSection.Visibility = discoverSettings.showAuthors && authors.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         finally
         {
@@ -856,7 +845,8 @@ public partial class MainWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 },
                 Foreground = new SolidColorBrush(Color.FromRgb(191, 178, 201)),
-                Margin = new Thickness(0, 0, 0, 12),
+                Margin = new Thickness(0),
+                MinHeight = 32,
                 FontSize = 12,
                 Cursor = Cursors.Hand,
                 IsChecked = selection.Contains(value)
@@ -878,6 +868,7 @@ public partial class MainWindow : Window
     private void ApplyDiscoverFilters(bool resetPage = true)
     {
         if (DiscoverModsPanel == null || DiscoverSearchBox == null || DiscoverPageText == null) return;
+        if (discoverLoading && discoverMods.Count == 0) return;
         if (resetPage) discoverPage = 0;
         string search = DiscoverSearchBox.Text.Trim();
         IEnumerable<DiscoverMod> filtered = discoverMods.Where(mod =>
@@ -896,9 +887,9 @@ public partial class MainWindow : Window
         int pages = Math.Max(1, (int)Math.Ceiling(results.Count / (double)discoverPageSize));
         discoverPage = Math.Clamp(discoverPage, 0, pages - 1);
         ShowDiscoverMods(results.Skip(discoverPage * discoverPageSize).Take(discoverPageSize));
-        DiscoverStatusText.Text = $"{results.Count} of {discoverMods.Count} mods" + discoverLoadNotice;
+        DiscoverStatusText.Text = discoverSettings.resultsFormat.Replace("{count}", results.Count.ToString()).Replace("{total}", discoverMods.Count.ToString()) + discoverLoadNotice;
         DiscoverEmptyState.Visibility = results.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        DiscoverPageText.Text = $"Page {discoverPage + 1} of {pages}";
+        DiscoverPageText.Text = discoverSettings.pageFormat.Replace("{page}", (discoverPage + 1).ToString()).Replace("{pages}", pages.ToString());
         DiscoverPreviousButton.IsEnabled = discoverPage > 0;
         DiscoverNextButton.IsEnabled = discoverPage < pages - 1;
     }
@@ -907,42 +898,51 @@ public partial class MainWindow : Window
     {
         DiscoverModsPanel.Children.Clear();
         foreach (var mod in mods) DiscoverModsPanel.Children.Add(CreateDiscoverModCard(mod));
+        if (discoverRevealPending) { RevealCatalogCards(); discoverRevealPending = false; }
     }
 
     private Border CreateDiscoverModCard(DiscoverMod mod)
     {
         var card = new Border
         {
-            Background = new SolidColorBrush(Color.FromRgb(28, 23, 34)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(57, 45, 66)),
+            Background = (Brush)FindResource("Surface"),
+            BorderBrush = (Brush)FindResource("Outline"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(13),
-            Padding = new Thickness(14),
-            Margin = new Thickness(0, 0, 0, 12)
+            Tag = mod,
+            CornerRadius = (CornerRadius)FindResource("CardRadius"),
+            Padding = (Thickness)FindResource("CardInset"),
+            MinHeight = 132,
+            Margin = new Thickness(0, 0, 0, 10)
         };
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition
         {
-            Width = new GridLength(86)
+            Width = new GridLength(DiscoverArtworkSize + 16)
         });
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var picture = new Image
         {
-            Stretch = Stretch.Uniform,
-            Source = new BitmapImage(new Uri("pack://application:,,,/OrbitClient;component/Assets/Orbit-removebg-preview.png"))
+            Stretch = Stretch.Uniform
         };
         var imageHolder = new Border
         {
-            Width = 74,
-            Height = 74,
-            CornerRadius = new CornerRadius(10),
-            Background = new SolidColorBrush(Color.FromRgb(42, 33, 50)),
-            Padding = new Thickness(4),
+            Width = DiscoverArtworkSize,
+            Height = DiscoverArtworkSize,
+            CornerRadius = new CornerRadius(Math.Max(0, ((CornerRadius)FindResource("CardRadius")).TopLeft - ((Thickness)FindResource("CardInset")).Left)),
+            Background = (Brush)FindResource("ControlSurface"),
+            Padding = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top,
             Child = picture
         };
-        if (!string.IsNullOrWhiteSpace(mod.image)) _ = LoadRemoteImage(picture, mod.image);
+        if (!string.IsNullOrWhiteSpace(mod.image)) _ = LoadDiscoverArtworkAsync(picture, imageHolder, mod.image);
+        else
+        {
+            var placeholder = MaterialSymbols.Icon("extension", 30);
+            ((System.Windows.Shapes.Path)placeholder).Fill = (Brush)FindResource("Muted");
+            imageHolder.Child = null;
+            var imageLayers = new Grid(); imageLayers.Children.Add(placeholder); imageLayers.Children.Add(picture); imageHolder.Child = imageLayers;
+        }
         grid.Children.Add(imageHolder);
         var content = new StackPanel();
         Grid.SetColumn(content, 1);
@@ -956,7 +956,7 @@ public partial class MainWindow : Window
         title.Inlines.Add(new System.Windows.Documents.Run(mod.name));
         if (!string.IsNullOrWhiteSpace(mod.author)) title.Inlines.Add(new System.Windows.Documents.Run("  by " + mod.author)
         {
-            Foreground = new SolidColorBrush(Color.FromRgb(169, 154, 178)),
+            Foreground = (Brush)FindResource("Muted"),
             FontSize = 12,
             FontWeight = FontWeights.Normal
         });
@@ -965,10 +965,10 @@ public partial class MainWindow : Window
         {
             Text = mod.description,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.FromRgb(190, 179, 199)),
-            FontSize = 12,
-            LineHeight = 18,
-            Margin = new Thickness(0, 7, 0, 12)
+            Foreground = (Brush)FindResource("Muted"),
+            FontSize = 14,
+            LineHeight = 21,
+            Margin = new Thickness(0, 6, 0, 8)
         });
         var footer = new Grid();
         footer.ColumnDefinitions.Add(new ColumnDefinition());
@@ -985,32 +985,23 @@ public partial class MainWindow : Window
     })
         {
             if (string.IsNullOrEmpty(label)) continue;
-            tags.Children.Add(new Border
-            {
-                Background = new SolidColorBrush(Color.FromRgb(51, 39, 61)),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(8, 3, 8, 3),
-                Margin = new Thickness(0, 0, 5, 4),
-                Child = new TextBlock
-                {
-                    Text = label,
-                    Foreground = new SolidColorBrush(Color.FromRgb(210, 187, 225)),
-                    FontSize = 10
-                }
-            });
+            var metadata = FeatureText(label, 12, true);
+            metadata.Margin = new Thickness(0, 0, 8, 0);
+            tags.Children.Add(metadata);
         }
         footer.Children.Add(tags);
         var install = new Button
         {
-            Content = "Install ↓",
+            Content = discoverSettings.installLabel,
             Tag = mod,
             Style = (Style)FindResource("Primary"),
-            Padding = new Thickness(12, 7, 12, 7),
-            Margin = new Thickness(8, 0, 0, 0),
+            Padding = new Thickness(8, 6, 8, 6),
+            Margin = new Thickness(6, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = !string.IsNullOrWhiteSpace(mod.download)
         };
         System.Windows.Automation.AutomationProperties.SetName(install, "Install " + mod.name);
+        MaterialSymbols.Label(install, discoverSettings.installLabel.TrimEnd(' ', '↓'), "download");
         install.Click += InstallDiscoverMod_Click;
         Grid.SetColumn(install, 1);
         footer.Children.Add(install);
@@ -1020,20 +1011,6 @@ public partial class MainWindow : Window
         return card;
     }
 
-    private void DiscoverSort_Click(object sender, RoutedEventArgs e)
-    {
-        discoverSort = (discoverSort + 1) % 4;
-        DiscoverSortButton.Content = new[] { "Sort: Featured ↕", "Sort: Name A–Z ↕", "Sort: Name Z–A ↕", "Sort: Author ↕" }[discoverSort];
-        ApplyDiscoverFilters();
-    }
-    private void DiscoverPageSize_Click(object sender, RoutedEventArgs e)
-    {
-        discoverPageSize = discoverPageSize == 8 ? 16 : discoverPageSize == 16 ? 24 : 8;
-        preferences.DiscoverPageSize = discoverPageSize;
-        SaveFeaturePreferences();
-        DiscoverPageSizeButton.Content = $"View: {discoverPageSize}";
-        ApplyDiscoverFilters();
-    }
     private void DiscoverPrevious_Click(object sender, RoutedEventArgs e)
     {
         discoverPage--;

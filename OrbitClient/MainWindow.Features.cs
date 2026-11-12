@@ -1,3 +1,4 @@
+using System.Windows.Documents;
 using Microsoft.Win32;
 using OrbitClient.DataModels;
 using OrbitClient.Scripts;
@@ -55,18 +56,17 @@ public partial class MainWindow
         { MessageBox.Show(this, ex.Message, "Unable to save preferences"); }
     }
 
-    private static TextBlock FeatureText(string text, double size = 14, bool muted = false) => new()
+    private TextBlock FeatureText(string text, double size = 14, bool muted = false)
     {
-        Text = text,
-        FontSize = size,
-        Foreground = new SolidColorBrush(muted ? Color.FromRgb(179, 166, 189) : Color.FromRgb(244, 239, 247)),
-        TextWrapping = TextWrapping.Wrap,
-        Margin = new Thickness(0, 0, 0, 10)
-    };
+        var label = new TextBlock { Text = size >= 24 ? TextRhythm.Heading(text) : text, Style = (Style)FindResource(size >= 24 ? "PageHeading" : muted ? "Caption" : "Body"), FontSize = Math.Max(12, size), TextWrapping = TextWrapping.Wrap, FontStyle = FontStyles.Normal, Margin = new Thickness(0, 0, 0, 8) };
+        label.SetResourceReference(TextBlock.ForegroundProperty, muted ? "Muted" : "Text");
+        Typography.SetNumeralAlignment(label, FontNumeralAlignment.Tabular);
+        return label;
+    }
 
     private Button FeatureButton(string label, Func<Task> action, bool primary = false)
     {
-        var button = new Button { Content = label, Style = (Style)FindResource(primary ? "Primary" : "Ghost"), Margin = new Thickness(0, 0, 8, 8) };
+        var button = new Button { Content = label, Style = (Style)FindResource(primary ? "Primary" : "Ghost"), Margin = new Thickness(0, 0, 6, 6) };
         System.Windows.Automation.AutomationProperties.SetName(button, label);
         var icon = label switch
         {
@@ -86,7 +86,7 @@ public partial class MainWindow
         button.Click += async (_, _) =>
         {
             button.IsEnabled = false;
-            try { await action(); }
+            try { await action(); if (!windowClosed) RevealLoadedContent(button); }
             catch (Exception ex) { SetFeatureStatus(ex.Message); }
             finally { button.IsEnabled = true; }
         };
@@ -179,7 +179,7 @@ public partial class MainWindow
             Content = "Create a snapshot before mod installs and updates",
             IsChecked = preferences.AutoSnapshot,
             Foreground = Brushes.White,
-            Margin = new Thickness(0, 8, 0, 18)
+            Margin = new Thickness(0, 6, 0, 12)
         };
         automatic.Click += (_, _) => { preferences.AutoSnapshot = automatic.IsChecked == true; SaveFeaturePreferences(); };
         FeatureContent.Children.Add(automatic);
@@ -253,24 +253,35 @@ public partial class MainWindow
             {
                 var content = new StackPanel();
                 content.Children.Add(FeatureText(mod.Name, 18));
-                content.Children.Add(FeatureText($"{(mod.Enabled ? "Enabled" : "Disabled")} · v{mod.Version}\n{System.IO.Path.GetRelativePath(InstallPath.Text, mod.Path)}", 12, true));
-                if (mod.Error != null) content.Children.Add(FeatureText("Unreadable metadata: " + mod.Error, 12, true));
+                var stateText = FeatureText($"{(mod.Enabled ? "Enabled" : "Disabled")} · v{mod.Version}", 12, true);
+                content.Children.Add(stateText);
+                var technical = new StackPanel();
+                technical.Children.Add(FeatureText(System.IO.Path.GetRelativePath(InstallPath.Text, mod.Path), 12, true));
+                if (mod.Error != null) technical.Children.Add(FeatureText("Unreadable metadata: " + mod.Error, 12, true));
                 var row = new WrapPanel();
-                row.Children.Add(FeatureButton(mod.Enabled ? "Disable" : "Enable", async () =>
+                Button? toggle = null;
+                toggle = FeatureButton(mod.Enabled ? "Disable" : "Enable", async () =>
                 {
-                    await WithFileOperation(root => Task.Run(() => workspace.ToggleMod(root, mod)));
+                    var previousText = stateText.Text;
+                    var previousLabel = toggle!.Content;
+                    await OptimisticUpdate.ApplyAsync(
+                        () => { stateText.Text = $"{(!mod.Enabled ? "Enabled" : "Disabled")} · v{mod.Version} · Saving…"; toggle!.Content = !mod.Enabled ? "Disable" : "Enable"; },
+                        () => WithFileOperation(root => Task.Run(() => workspace.ToggleMod(root, mod))),
+                        () => { stateText.Text = previousText; toggle!.Content = previousLabel; });
                     if (featurePage == "Mod Library") { OpenFeaturePage("Mod Library"); SetFeatureStatus("Mod state saved for the next launch."); }
-                }));
+                });
+                row.Children.Add(toggle);
+                var fileActions = new WrapPanel();
                 var config = string.IsNullOrWhiteSpace(mod.Guid) || mod.Guid.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0 ? ""
                     : System.IO.Path.Combine(InstallPath.Text, "BepInEx", "config", mod.Guid + ".cfg");
-                if (File.Exists(config)) row.Children.Add(FeatureButton("Open settings", () => { OpenLocal(config, true); return Task.CompletedTask; }));
-                else row.Children.Add(FeatureButton("Config folder", () => { OpenLocal(System.IO.Path.Combine(InstallPath.Text, "BepInEx", "config")); return Task.CompletedTask; }));
+                if (File.Exists(config)) fileActions.Children.Add(FeatureButton("Open settings", () => { OpenLocal(config, true); return Task.CompletedTask; }));
+                else fileActions.Children.Add(FeatureButton("Config folder", () => { OpenLocal(System.IO.Path.Combine(InstallPath.Text, "BepInEx", "config")); return Task.CompletedTask; }));
                 var fileName = System.IO.Path.GetFileName(mod.Path).Replace(".disabled", "", StringComparison.OrdinalIgnoreCase);
                 var match = discoverMods.FirstOrDefault(x => Uri.TryCreate(x.download, UriKind.Absolute, out var uri)
                     && string.Equals(System.IO.Path.GetFileName(uri.LocalPath), fileName, StringComparison.OrdinalIgnoreCase));
                 var known = catalogChecked && match != null && Version.TryParse(match.version.TrimStart('v'), out _) && Version.TryParse(mod.Version.TrimStart('v'), out _);
                 var newer = known && Version.Parse(match!.version.TrimStart('v')) > Version.Parse(mod.Version.TrimStart('v'));
-                content.Children.Add(FeatureText(!known ? "Update status unknown · check the catalog or the mod author's release page."
+                technical.Children.Add(FeatureText(!known ? "Update status unknown · check the catalog or the mod author's release page."
                     : newer ? $"Update available · v{match!.version}" : "Up to date with the catalog.", 12, true));
                 if (newer) row.Children.Add(FeatureButton("Update mod", async () =>
                 {
@@ -278,6 +289,8 @@ public partial class MainWindow
                     if (featurePage == "Mod Library") { OpenFeaturePage("Mod Library"); SetFeatureStatus("Mod updated. Its enabled state was preserved."); }
                 }, true));
                 content.Children.Add(row);
+                technical.Children.Add(fileActions);
+                content.Children.Add(new Expander { Header = "File and update details", Content = technical, Foreground = (Brush)FindResource("Text"), Margin = new Thickness(0, 6, 0, 0) });
                 FeatureContent.Children.Add(FeatureCard(content));
             }
         }
@@ -304,6 +317,7 @@ public partial class MainWindow
             if (existingPath == null && File.Exists(destination + ".disabled")) destination += ".disabled";
             WorkspaceService.EnsureNoLinks(destination);
             var bytes = await orbitContent.DownloadAsync(uri.AbsoluteUri, 64 * 1024 * 1024, TimeSpan.FromSeconds(preferences.DownloadTimeout));
+            OrbitContentService.VerifyModDownload(mod, bytes);
             using (var pe = new System.Reflection.PortableExecutable.PEReader(new MemoryStream(bytes)))
                 if (!pe.HasMetadata) throw new IOException("The download is not a managed DLL.");
             WorkspaceService.RequireGameClosed();

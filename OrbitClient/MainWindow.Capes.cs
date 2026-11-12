@@ -64,17 +64,16 @@ public partial class MainWindow
     {
         try
         {
-            if (message.Type == "capes_request") { await RefreshDesktopCapesAsync(); return; }
+            if (message.Type == "capes_request") { CapePipeRequests.Empty(message.Data); await RefreshDesktopCapesAsync(); return; }
             if (message.Type == "cape_clear")
             {
+                CapePipeRequests.Empty(message.Data);
                 await capeService.ClearAsync(false);
                 capeStatus = "Desktop cape selection cleared from the game.";
             }
             else
             {
-                if (message.Data.Length > 1024) throw new IOException("Invalid cape request.");
-                var request = JsonSerializer.Deserialize<CapeRequest>(message.Data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? throw new IOException("Invalid cape request.");
+                var request = CapePipeRequests.Selection(message.Data);
                 if (message.Type == "cape_preview") await capeService.PreviewAsync(request);
                 else if (message.Type == "cape_select")
                 {

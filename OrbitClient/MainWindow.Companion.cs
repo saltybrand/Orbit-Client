@@ -16,10 +16,10 @@ public partial class MainWindow
                     () => InstallBepInEx(root));
             SetFeatureStatus("Checking the latest Orbit companion…");
             var installed = await new OrbitCompanionInstaller().InstallAsync(root,
-                () => orbitContent.DownloadAsync(OrbitCompanionInstaller.DownloadSource, 64 * 1024 * 1024,
-                    TimeSpan.FromSeconds(preferences.DownloadTimeout)),
+                () => OrbitCompanionInstaller.DownloadLatestAsync(() => orbitContent.DownloadAsync(
+                    OrbitCompanionInstaller.DownloadSource, 64 * 1024 * 1024, TimeSpan.FromSeconds(preferences.DownloadTimeout))),
                 preferences.AutoSnapshot ? () => workspace.CreateSnapshot(root) : null);
-            SetFeatureStatus(installed ? "Orbit companion installed. Press F4 in game to open it." : "Orbit companion is up to date. Press F4 in game to open it.");
+            SetFeatureStatus(installed ? "Orbit companion installed. Press F4 in game to open it." : "Orbit companion is ready. Press F4 in game to open it.");
         });
     }
 

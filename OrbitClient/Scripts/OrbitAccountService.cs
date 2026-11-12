@@ -50,8 +50,8 @@ public sealed class OrbitAccountConfig
         AccountPageUrl ??= "";
         if (AccountPageUrl.Length > 0 && (!Uri.TryCreate(AccountPageUrl, UriKind.Absolute, out
               var page) ||
-            page.Scheme != "https" || page.UserInfo.Length > 0 || page.Query.Length > 0 || page.Fragment.Length > 0))
-            throw new IOException("Enter an HTTPS account page URL without a query or fragment.");
+            page.Scheme != "https" || page.IsLoopback || page.UserInfo.Length > 0 || page.Query.Length > 0 || page.Fragment.Length > 0))
+            throw new IOException("Enter a public HTTPS account page URL without localhost, a query or fragment.");
     }
 }
 
@@ -89,7 +89,7 @@ public sealed partial class OrbitAccountService : IDisposable
         private set;
     }
 
-    public OrbitAccountService(OrbitAccountConfig config, IOrbitCredentialStore? store = null, HttpMessageHandler? handler = null)
+    public OrbitAccountService(OrbitAccountConfig config, IOrbitCredentialStore? store = null, HttpMessageHandler? handler = null, HttpMessageHandler? submissionHandler = null)
     {
         config.Validate();
         Config = config;
@@ -102,6 +102,9 @@ public sealed partial class OrbitAccountService : IDisposable
         client.BaseAddress = new Uri(Config.ProjectUrl + "/");
         client.Timeout = TimeSpan.FromSeconds(25);
         client.DefaultRequestHeaders.Add("apikey", Config.PublishableKey);
+        submissionFiles = new HttpClient(submissionHandler ?? new HttpClientHandler { AllowAutoRedirect = false })
+        { BaseAddress = client.BaseAddress, Timeout = TimeSpan.FromMinutes(3) };
+        submissionFiles.DefaultRequestHeaders.Add("apikey", Config.PublishableKey);
     }
 
     private async Task<JsonElement> SendAsync(HttpMethod method, string path, object? body = null, string? bearer = null,
@@ -552,5 +555,6 @@ public sealed partial class OrbitAccountService : IDisposable
     {
         lifetime.Cancel();
         client.Dispose();
+        submissionFiles.Dispose();
     }
 }

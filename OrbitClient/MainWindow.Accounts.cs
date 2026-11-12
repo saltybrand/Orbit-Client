@@ -78,14 +78,15 @@ public partial class MainWindow
         parent.Children.Add(FeatureText(label, 12, true));
         var input = new TextBox
         {
+            Style = (Style)FindResource("ProfileInput"),
             Text = value,
             MaxLength = maximum,
-            Padding = new Thickness(12, 9, 12, 9),
+            Padding = new Thickness(8, 6, 8, 6),
             Background = new SolidColorBrush(Color.FromRgb(28, 21, 35)),
             Foreground = Brushes.White,
             BorderBrush = new SolidColorBrush(Color.FromRgb(73, 53, 87)),
             CaretBrush = Brushes.White,
-            Margin = new Thickness(0, 0, 0, 14),
+            Margin = new Thickness(0, 0, 0, 10),
             FontSize = 14
         };
         System.Windows.Automation.AutomationProperties.SetName(input, label);
@@ -99,7 +100,7 @@ public partial class MainWindow
         {
             Content = label,
             Style = (Style)FindResource(primary ? "Primary" : "Ghost"),
-            Margin = new Thickness(0, 0, 8, 8)
+            Margin = new Thickness(0, 0, 6, 6)
         };
         System.Windows.Automation.AutomationProperties.SetName(button, label);
         button.Click += async (_, _) => await RunOrbitAction(action);
@@ -138,6 +139,7 @@ public partial class MainWindow
             orbitBusy = false;
             if (!windowClosed)
             {
+            if (orbitStatus.Text == message) orbitStatus.Text = "";
             orbitForm.IsEnabled = true;
             orbitCancel.Visibility = Visibility.Collapsed;
             if (orbitAccount?.Account is null && (orbitProfile is not null || wasSignedIn))
@@ -160,94 +162,22 @@ public partial class MainWindow
         UpdateProfileNav();
         OrbitAccountHost.Children.Clear();
         var card = new StackPanel();
-        card.Children.Add(FeatureText(orbitAccount?.Account is null ? orbitRegister ? "Create your account" : "Welcome back" : "Your profile", 26));
-        card.Children.Add(FeatureText(orbitAccount?.Account is null ? "Make yourself at home." : "Keep it personal.", 13, true));
         orbitStatus = FeatureText(message, 13, true);
+        orbitStatus.Name = "ProfileStatus";
         System.Windows.Automation.AutomationProperties.SetLiveSetting(orbitStatus, System.Windows.Automation.AutomationLiveSetting.Polite);
+        var statusStyle = new Style(typeof(TextBlock));
+        var empty = new Trigger { Property = TextBlock.TextProperty, Value = "" };
+        empty.Setters.Add(new Setter(VisibilityProperty, Visibility.Collapsed));
+        statusStyle.Triggers.Add(empty);
+        orbitStatus.Style = statusStyle;
+        orbitStatus.Margin = new Thickness(0, 0, 0, 10);
         card.Children.Add(orbitStatus);
-        orbitForm = new StackPanel
-        {
-            MaxWidth = 620,
-            Width = 480,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            MinWidth = 320,
-            IsEnabled = !orbitBusy
-        };
+        orbitForm = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = !orbitBusy };
         card.Children.Add(orbitForm);
         if (orbitAccount?.Account is { }
           account)
         {
-            var identity = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 0, 0, 16)
-            };
-            identity.Children.Add(ProfileAvatar(72));
-            var identityText = new StackPanel
-            {
-                Margin = new Thickness(16, 0, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            identityText.Children.Add(FeatureText(ProfileName(), 22));
-            identityText.Children.Add(FeatureText("Signed in", 12, true));
-            identity.Children.Add(identityText);
-            orbitForm.Children.Add(identity);
-            orbitForm.Children.Add(FeatureText(account.Email, 13, true));
-            var pictureActions = new WrapPanel();
-            pictureActions.Children.Add(OrbitButton("Change picture", ChangeOrbitPictureAsync));
-            pictureActions.Children.Add(OrbitButton("Use default picture", async () =>
-            {
-                await RequireOrbitAccount().RemoveAvatarAsync();
-                orbitAvatar = null;
-                await LoadOrbitAvatarAsync();
-                BuildOrbitAccount("Profile picture reset.");
-            }));
-            orbitForm.Children.Add(pictureActions);
-            var username = OrbitInput("Username", orbitForm, orbitDraftUsername ?? orbitProfile?.Username ?? "", 24);
-            var bio = OrbitInput("Bio", orbitForm, orbitDraftBio ?? orbitProfile?.Bio ?? "", 500);
-            bio.AcceptsReturn = true;
-            bio.Height = 85;
-            bio.TextWrapping = TextWrapping.Wrap;
-            var draftStatus = FeatureText("", 12, true);
-            orbitForm.Children.Add(draftStatus);
-            var row = new WrapPanel();
-            var save = OrbitButton(orbitProfile is null ? "Create profile" : "Save profile", async () =>
-            {
-                orbitProfile = await orbitAccount.SaveProfileAsync(username.Text.Trim().ToLowerInvariant(), bio.Text, orbitProfile is null);
-                orbitDraftUsername = null;
-                orbitDraftBio = null;
-                BuildOrbitAccount("Profile saved.");
-            }, true);
-            void UpdateDraft()
-            {
-                orbitDraftUsername = username.Text;
-                orbitDraftBio = bio.Text;
-                var valid = System.Text.RegularExpressions.Regex.IsMatch(username.Text.Trim().ToLowerInvariant(), "^[a-z0-9_]{3,24}$");
-                var changed = orbitProfile is null || username.Text.Trim().ToLowerInvariant() != orbitProfile.Username || bio.Text != orbitProfile.Bio;
-                save.IsEnabled = valid && changed;
-                draftStatus.Text = !valid ? "Use 3–24 letters, numbers, or underscores." : $"{bio.Text.Length}/500" + (changed ? " · Unsaved changes" : "");
-            }
-            username.TextChanged += (_, _) => UpdateDraft();
-            bio.TextChanged += (_, _) => UpdateDraft();
-            UpdateDraft();
-            row.Children.Add(save);
-            row.Children.Add(OrbitButton("Reload profile", async () =>
-            {
-                if (!ConfirmDiscardProfile()) return;
-                await LoadOrbitProfileAsync();
-                orbitDraftUsername = null;
-                orbitDraftBio = null;
-                BuildOrbitAccount("Profile loaded.");
-            }));
-            orbitForm.Children.Add(row);
-            var logout = new WrapPanel();
-            logout.Children.Add(OrbitButton("Sign out", async () => { if (ConfirmDiscardProfile()) await SignOutOrbit(false); }));
-            logout.Children.Add(OrbitButton("Sign out all devices", async () =>
-            {
-                if (MessageBox.Show(this, "Sign out of Orbit on every device?", "Sign out", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes
-                    && ConfirmDiscardProfile()) await SignOutOrbit(true);
-            }));
-            orbitForm.Children.Add(new Expander { Header = "Session", Foreground = Brushes.White, Content = logout, Margin = new Thickness(0, 16, 0, 0) });
+            BuildSignedInProfile(account);
         }
         else
         {
@@ -255,13 +185,14 @@ public partial class MainWindow
             email.TextChanged += (_, _) => orbitEmail = email.Text.Trim();
             var password = new PasswordBox
             {
-                Padding = new Thickness(12, 9, 12, 9),
+                Style = (Style)FindResource("ProfilePassword"),
+                Padding = new Thickness(8, 6, 8, 6),
                 MaxLength = 512,
                 FontSize = 14,
                 Foreground = Brushes.White,
                 Background = new SolidColorBrush(Color.FromRgb(28, 21, 35)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(73, 53, 87)),
-                Margin = new Thickness(0, 0, 0, 14)
+                Margin = new Thickness(0, 0, 0, 10)
             };
             orbitForm.Children.Add(FeatureText(orbitRegister ? "Password (at least 12 characters)" : "Password", 12, true));
             System.Windows.Automation.AutomationProperties.SetName(password, "Password");
@@ -272,13 +203,14 @@ public partial class MainWindow
                 orbitForm.Children.Add(FeatureText("Confirm password", 12, true));
                 confirmation = new PasswordBox
                 {
-                    Padding = new Thickness(12, 9, 12, 9),
+                    Style = (Style)FindResource("ProfilePassword"),
+                    Padding = new Thickness(8, 6, 8, 6),
                     MaxLength = 512,
                     FontSize = 14,
                     Foreground = Brushes.White,
                     Background = new SolidColorBrush(Color.FromRgb(28, 21, 35)),
                     BorderBrush = new SolidColorBrush(Color.FromRgb(73, 53, 87)),
-                    Margin = new Thickness(0, 0, 0, 14)
+                    Margin = new Thickness(0, 0, 0, 10)
                 };
                 System.Windows.Automation.AutomationProperties.SetName(confirmation, "Confirm password");
                 orbitForm.Children.Add(confirmation);
@@ -288,12 +220,12 @@ public partial class MainWindow
                 Content = "Keep me signed in",
                 IsChecked = orbitRemember,
                 Foreground = Brushes.White,
-                Margin = new Thickness(0, 0, 0, 18)
+                Margin = new Thickness(0, 0, 0, 12)
             };
             orbitForm.Children.Add(remember);
             remember.Checked += (_, _) => orbitRemember = true;
             remember.Unchecked += (_, _) => orbitRemember = false;
-            var actions = new WrapPanel();
+            var actions = new StackPanel();
             var signIn = OrbitButton(orbitRegister ? "Create account" : "Sign in", async () =>
             {
                 var service = RequireOrbitAccount();
@@ -308,7 +240,7 @@ public partial class MainWindow
                         await service.SignUpAsync(orbitEmail, secret);
                         orbitRegister = false;
                         orbitConfirmationPending = true;
-                        BuildOrbitAccount("Check your email to finish signing up.");
+                        BuildOrbitAccount("Check your email and enter its confirmation code below. If the email has a button instead, copy that button's link into the same field.");
                     }
                     else
                     {
@@ -331,6 +263,8 @@ public partial class MainWindow
                     confirmation?.Clear();
                 }
             }, true);
+            signIn.Height = 42;
+            signIn.Margin = new Thickness(0, 0, 0, 6);
             actions.Children.Add(signIn);
             password.KeyDown += (_, e) =>
             {
@@ -338,14 +272,6 @@ public partial class MainWindow
                 e.Handled = true;
                 signIn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             };
-            actions.Children.Add(OrbitButton(orbitRegister ? "I already have an account" : "Create an account", () =>
-            {
-                orbitEmail = email.Text.Trim();
-                orbitRemember = remember.IsChecked == true;
-                orbitRegister = !orbitRegister;
-                BuildOrbitAccount();
-                return Task.CompletedTask;
-            }));
             orbitForm.Children.Add(actions);
             var discord = OrbitButton("Continue with Discord", async () =>
             {
@@ -367,12 +293,23 @@ public partial class MainWindow
                 }
                 BuildOrbitAccount(status);
             });
+            discord.Height = 42;
+            discord.Margin = new Thickness(0, 0, 0, 6);
             discord.Background = new SolidColorBrush(Color.FromRgb(88, 101, 242));
             orbitForm.Children.Add(FeatureText("or", 12, true));
             orbitForm.Children.Add(discord);
-            var verification = new StackPanel { Margin = new Thickness(0, 12, 0, 0) };
-            verification.Children.Add(FeatureText("Paste the link or code from your latest email.", 12, true));
+            var verification = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
+            verification.Children.Add(FeatureText("Enter the code from your newest email to confirm directly in Orbit. If the email only has a Confirm email address button, right-click it, choose Copy link, and paste that original link below.", 12, true));
             var emailCode = OrbitInput("Confirmation link or code", verification, maximum: 4096);
+            verification.Children.Add(OrbitButton("Paste confirmation link", () =>
+            {
+                emailCode.Text = Clipboard.ContainsText() ? Clipboard.GetText().Trim() : "";
+                emailCode.Focus();
+                orbitStatus.Text = emailCode.Text.Length > 0 ? "Confirmation pasted. Choose Verify email and sign in." : "Copy the confirmation link from your newest email first.";
+                return Task.CompletedTask;
+            }));
+            if (orbitConfirmationPending)
+                verification.Children.Add(FeatureText("Already clicked the email and landed on localhost? Return here and try signing in with your password; your email may already be confirmed. If not, resend the email and copy its new link.", 12, true));
             verification.Children.Add(OrbitButton("Verify email and sign in", async () =>
             {
                 orbitEmail = email.Text.Trim();
@@ -410,11 +347,11 @@ public partial class MainWindow
                 await RequireOrbitAccount().ResendConfirmationAsync(email.Text.Trim());
                 orbitEmail = email.Text.Trim();
                 orbitConfirmationPending = true;
-                orbitStatus.Text = "Check your latest email, then paste the confirmation link or code.";
+                BuildOrbitAccount("New confirmation email sent. Enter its code below, or copy and paste its confirmation button's link.");
             }));
             orbitForm.Children.Add(help);
             orbitForm.Children.Add(new Expander { Header = "Confirm email", IsExpanded = orbitConfirmationPending,
-                Foreground = Brushes.White, Content = verification, Margin = new Thickness(0, 12, 0, 0) });
+                Foreground = Brushes.White, Content = verification, Margin = new Thickness(0, 8, 0, 0) });
         }
 
         orbitCancel = new Button
@@ -426,7 +363,7 @@ public partial class MainWindow
         };
         orbitCancel.Click += (_, _) => orbitSignInCancel?.Cancel();
         card.Children.Add(orbitCancel);
-        OrbitAccountHost.Children.Add(FeatureCard(card));
+        ComposeProfilePage(card);
     }
 
     private OrbitAccountService RequireOrbitAccount() => orbitAccount ??
@@ -493,7 +430,7 @@ public partial class MainWindow
         {
             var text = new StackPanel
             {
-                Margin = new Thickness(10, 0, 0, 0),
+                Margin = new Thickness(6, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
             text.Children.Add(new TextBlock

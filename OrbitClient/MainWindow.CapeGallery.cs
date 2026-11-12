@@ -25,7 +25,7 @@ public partial class MainWindow
     private void BuildCapeGallery()
     {
         capeGalleryGeneration++;
-        var tabs = new WrapPanel { Margin = new Thickness(0, 0, 0, 20) };
+        var tabs = new WrapPanel { Margin = new Thickness(0, 0, 0, 14) };
         var owned = capeService.Catalog.Items.Count(c => c.Owned);
         var labels = new[] { $"Dressing room · {owned}", "Shop", "Redeem key" };
         for (var i = 0; i < labels.Length; i++)
@@ -44,24 +44,25 @@ public partial class MainWindow
             FeatureContent.Children.Add(FeatureCard(welcome));
         }
         if (capeTab == 2) { BuildCapeRedemption(); SetFeatureStatus(capeStatus); return; }
-        capeHero = new Border { Margin = new Thickness(0, 0, 0, 20) };
+        capeHero = new Border { Margin = new Thickness(0, 0, 0, 14) };
         FeatureContent.Children.Add(capeHero);
         RenderCapeHero();
-        var search = new TextBox { Text = capeQuery, FontSize = 14, Padding = new Thickness(8, 10, 8, 10), Background = Brushes.Transparent, Foreground = Brushes.White, CaretBrush = Brushes.White, BorderThickness = new Thickness(0), ToolTip = "Search cape names" };
+        var search = new TextBox { Text = capeQuery, FontSize = 14, Padding = new Thickness(6, 6, 6, 6), Background = Brushes.Transparent, Foreground = Brushes.White, CaretBrush = Brushes.White, BorderThickness = new Thickness(0), ToolTip = "Search cape names" };
         var searchRow = new DockPanel();
         var searchIcon = MaterialSymbols.Icon("search", 18);
         ((System.Windows.Shapes.Path)searchIcon).Fill = new SolidColorBrush(Color.FromRgb(155, 145, 170));
-        searchIcon.Margin = new Thickness(14, 0, 4, 0); DockPanel.SetDock(searchIcon, Dock.Left); searchRow.Children.Add(searchIcon);
+        searchIcon.Margin = new Thickness(10, 0, 4, 0); DockPanel.SetDock(searchIcon, Dock.Left); searchRow.Children.Add(searchIcon);
         var searchInput = new Grid(); searchInput.Children.Add(search);
-        var placeholder = new TextBlock { Text = "Search your next cape…", Foreground = new SolidColorBrush(Color.FromRgb(155, 145, 170)), Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false, Visibility = capeQuery.Length == 0 ? Visibility.Visible : Visibility.Collapsed };
+        var placeholder = new TextBlock { Text = "Search your next cape…", Foreground = new SolidColorBrush(Color.FromRgb(155, 145, 170)), Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false, Visibility = capeQuery.Length == 0 ? Visibility.Visible : Visibility.Collapsed };
         searchInput.Children.Add(placeholder); searchRow.Children.Add(searchInput);
         System.Windows.Automation.AutomationProperties.SetName(search, "Search capes");
         search.TextChanged += (_, _) => { capeQuery = search.Text; placeholder.Visibility = capeQuery.Length == 0 ? Visibility.Visible : Visibility.Collapsed; capePage = 0; RenderCapeTiles(); };
         FeatureContent.Children.Add(FeatureText(capeTab switch { 0 => "Your collection", 1 => "Discover your next cape", _ => "Redeem your cape" }, 22));
-        FeatureContent.Children.Add(new Border { CornerRadius = new CornerRadius(12), Background = (Brush)FindResource("ControlSurface"), BorderBrush = new SolidColorBrush(Color.FromRgb(48, 39, 55)), BorderThickness = new Thickness(1), Child = searchRow, Margin = new Thickness(0, 0, 0, 16) });
+        FeatureContent.Children.Add(new Border { CornerRadius = new CornerRadius(12), Background = (Brush)FindResource("ControlSurface"), BorderBrush = new SolidColorBrush(Color.FromRgb(48, 39, 55)), BorderThickness = new Thickness(1), Child = searchRow, Margin = new Thickness(0, 0, 0, 10) });
         capeTiles = new StackPanel();
         FeatureContent.Children.Add(capeTiles);
         RenderCapeTiles();
+        if (!capeCatalogLoaded && capeStatus.Length == 0) ShowCatalogSkeletons(capeTiles, 2);
         SetFeatureStatus(capeStatus);
         if (!capeCatalogLoaded && !capeSyncBusy && capeStatus.Length == 0) _ = RefreshDesktopCapesAsync();
     }
@@ -74,11 +75,11 @@ public partial class MainWindow
             ?? capeService.Catalog.Items.FirstOrDefault(c => c.Owned);
         if (cape == null) { capeHero.Child = null; return; }
         var layout = new Grid { Margin = new Thickness(4) };
-        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(138) });
         layout.ColumnDefinitions.Add(new ColumnDefinition());
-        layout.Children.Add(CapeArt(cape, 160, 186));
-        var details = new StackPanel { Margin = new Thickness(22, 8, 8, 8), VerticalAlignment = VerticalAlignment.Center };
-        details.Children.Add(CapeBadge(cape.Id == capeService.SelectedId ? "SELECTED CAPE" : CapeAccessLabel(cape)));
+        layout.Children.Add(CapeArt(cape, 128, 148));
+        var details = new StackPanel { Margin = new Thickness(14, 6, 6, 6), VerticalAlignment = VerticalAlignment.Center };
+        details.Children.Add(CapeBadge(cape.Id == capeService.SelectedId ? "Equipped" : CapeAccessLabel(cape)));
         details.Children.Add(FeatureText(cape.Title, 26));
         details.Children.Add(FeatureText(cape.Description, 14, true));
         var actions = new WrapPanel();
@@ -113,7 +114,7 @@ public partial class MainWindow
         foreach (var cape in entries.Skip(capePage * CapePageSize).Take(CapePageSize))
         {
             var body = new StackPanel { Margin = new Thickness(4) };
-            body.Children.Add(CapeArt(cape, double.NaN, 174));
+            body.Children.Add(CapeArt(cape, double.NaN, 140));
             body.Children.Add(CapeBadge(CapeAccessLabel(cape)));
             body.Children.Add(FeatureText(cape.Title, 19));
             var description = FeatureText(cape.Description, 13, true);
@@ -123,7 +124,7 @@ public partial class MainWindow
             actions.Children.Add(CapeAction(cape));
             if (cape.Owned) actions.Children.Add(FeatureButton("Inspect", () => { capeFocusedId = cape.Id; RenderCapeHero(); return Task.CompletedTask; }));
             body.Children.Add(actions);
-            var card = FeatureCard(body); card.Margin = new Thickness(0, 0, 12, 12);
+            var card = FeatureCard(body); card.Margin = new Thickness(0, 0, 8, 8);
             if (!preferences.ReducedMotion) card.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
             grid.Children.Add(card);
         }
@@ -155,15 +156,15 @@ public partial class MainWindow
             OpenFeaturePage("Capes");
         }, true);
         if (cape.UnlockType == "key") return FeatureButton("Redeem a key", () => { capeTab = 2; OpenFeaturePage("Capes"); return Task.CompletedTask; }, true);
-        return new Button { Content = cape.UnlockType == "admin" ? "Admin grant" : "Redeem with key", IsEnabled = false, Style = (Style)FindResource("Ghost"), Margin = new Thickness(0, 0, 8, 8) };
+        return new Button { Content = cape.UnlockType == "admin" ? "Admin grant" : "Redeem with key", IsEnabled = false, Style = (Style)FindResource("Ghost"), Margin = new Thickness(0, 0, 6, 6) };
     }
 
-    private static string CapeAccessLabel(CapeDefinition cape) => cape.Owned ? "IN YOUR COLLECTION" : cape.UnlockType switch { "free" => "FREE TO CLAIM", "admin" => "ADMIN EXCLUSIVE", _ => "SINGLE-USE KEY" };
+    private static string CapeAccessLabel(CapeDefinition cape) => cape.Owned ? "In your collection" : cape.UnlockType switch { "free" => "Free to claim", "admin" => "Admin exclusive", _ => "Single-use key" };
     private Border CapeBadge(string text) => new()
     {
-        Background = (Brush)FindResource("AccentSoft"), CornerRadius = new CornerRadius(8), Padding = new Thickness(9, 5, 9, 5),
-        HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 10, 0, 10),
-        Child = new TextBlock { Text = text, FontSize = 10, FontWeight = FontWeights.SemiBold, Foreground = (Brush)FindResource("AccentLight") }
+        Background = Brushes.Transparent, CornerRadius = new CornerRadius(0), Padding = new Thickness(0),
+        HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 6, 0, 6),
+        Child = new TextBlock { Text = text, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = (Brush)FindResource("AccentLight") }
     };
 
     private Border CapeArt(CapeDefinition cape, double width, double height)
@@ -171,11 +172,11 @@ public partial class MainWindow
         var grid = new Grid();
         var silhouette = new Polygon { Points = new PointCollection(new[] { new Point(28, 0), new Point(72, 0), new Point(100, 130), new Point(82, 142), new Point(50, 134), new Point(18, 142), new Point(0, 130) }), Width = 86, Height = 122, Stretch = Stretch.Fill, Fill = new LinearGradientBrush(Color.FromRgb(146, 100, 205), Color.FromRgb(52, 34, 76), 90), Opacity = cape.Owned ? 0.6 : 0.28 };
         grid.Children.Add(silhouette);
-        var image = new Image { Stretch = Stretch.Uniform, Margin = new Thickness(12), Visibility = Visibility.Collapsed };
+        var image = new Image { Stretch = Stretch.Uniform, Margin = new Thickness(8), Visibility = Visibility.Collapsed };
         grid.Children.Add(image);
-        if (!cape.Owned) grid.Children.Add(new TextBlock { Text = cape.UnlockType == "free" ? "CLAIM TO REVEAL" : "LOCKED", Foreground = Brushes.White, FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 12) });
+        if (!cape.Owned) grid.Children.Add(new TextBlock { Text = cape.UnlockType == "free" ? "CLAIM TO REVEAL" : "LOCKED", Foreground = Brushes.White, FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 8) });
         var border = new Border { Width = width, Height = height, CornerRadius = new CornerRadius(14), Background = new SolidColorBrush(Color.FromRgb(18, 13, 26)), ClipToBounds = true, Child = grid, Margin = new Thickness(0, 0, 0, 4) };
-        if (cape.Owned) _ = LoadCapeArtAsync(cape, image, silhouette, capeGalleryGeneration);
+        if (cape.Owned) { silhouette.Fill = (Brush)FindResource("SkeletonSurface"); Skeleton.SetActive(silhouette, true); _ = LoadCapeArtAsync(cape, image, silhouette, capeGalleryGeneration); }
         return border;
     }
 
@@ -200,7 +201,7 @@ public partial class MainWindow
         }
         catch (Exception ex) when (ex is IOException or HttpRequestException or OperationCanceledException or UnauthorizedAccessException or NotSupportedException or FormatException)
         { image.ToolTip = "Preview unavailable. Refresh your dressing room to try again."; }
-        finally { capeArtworkSlots.Release(); }
+        finally { Skeleton.SetActive(silhouette, false); capeArtworkSlots.Release(); }
     }
 }
 

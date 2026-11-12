@@ -1,3 +1,4 @@
+using System.Windows.Documents;
 using Microsoft.Win32;
 using OrbitClient.Scripts;
 using System.IO;
@@ -33,10 +34,16 @@ public partial class MainWindow
         }
         if (preferences.StartMaximized) WindowState = WindowState.Maximized;
         discoverPageSize = preferences.DiscoverPageSize;
-        DiscoverPageSizeButton.Content = $"View: {discoverPageSize}";
+        UpdateDiscoverChoices();
+        MaterialSymbols.Label(DiscoverRefreshButton, "Refresh", "refresh");
+        MaterialSymbols.Label(DiscoverClearButton, "Clear filters", "restart_alt");
+        DiscoverPreviousButton.Content = "Previous"; DiscoverNextButton.Content = "Next";
+        var searchSymbol = MaterialSymbols.Icon("search", 18);
+        ((System.Windows.Shapes.Path)searchSymbol).SetResourceReference(Shape.FillProperty, "Muted");
+        DiscoverSearchIconHost.Content = searchSymbol;
         BuildExtraSettings();
         ApplyAppearance();
-        ContentBackground.SizeChanged += (_, _) => LayoutStars();
+
         Closing += (_, e) =>
         {
             if (preferences.ConfirmClose && MessageBox.Show(this, "Close Orbit?", "Orbit", MessageBoxButton.YesNo,
@@ -48,8 +55,8 @@ public partial class MainWindow
     {
         static double Limit(double value, double min, double max, double fallback) => double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
         preferences.TextScale = Limit(preferences.TextScale, .85, 1.2, 1);
-        preferences.SidebarWidth = Limit(preferences.SidebarWidth, 200, 280, 225);
-        preferences.CornerRadius = Limit(preferences.CornerRadius, 0, 24, 14);
+        preferences.SidebarWidth = Limit(preferences.SidebarWidth, 180, 260, 200);
+        preferences.CornerRadius = Limit(preferences.CornerRadius, 0, 24, 12);
         preferences.SurfaceOpacity = Limit(preferences.SurfaceOpacity, .6, 1, .95);
         preferences.BackgroundOpacity = Limit(preferences.BackgroundOpacity, .1, 1, .35);
         preferences.StarSpeed = Limit(preferences.StarSpeed, .25, 2, 1);
@@ -61,8 +68,7 @@ public partial class MainWindow
         preferences.GamePath ??= "";
         preferences.ImageFit ??= "Fill";
         if (preferences.Font is not ("Segoe UI"
-            or "Arial"
-            or "Consolas")) preferences.Font = "Segoe UI";
+            or "Arial")) preferences.Font = "Segoe UI";
         if (preferences.StartupPage is not ("Home"
             or "Discover"
             or "Appearance"
@@ -88,13 +94,13 @@ public partial class MainWindow
         var heading = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Margin = new Thickness(0, 0, 0, 8)
+            Margin = new Thickness(0, 0, 0, 6)
         };
         var symbol = MaterialSymbols.Icon(icon, 22);
         ((System.Windows.Shapes.Path)symbol).SetResourceReference(Shape.FillProperty, "AccentLight");
         heading.Children.Add(symbol);
         var label = FeatureText(title, 19);
-        label.Margin = new Thickness(12, 0, 0, 0);
+        label.Margin = new Thickness(8, 0, 0, 0);
         heading.Children.Add(label);
         panel.Children.Add(heading);
         panel.Children.Add(FeatureText(description, 12, true));
@@ -106,7 +112,7 @@ public partial class MainWindow
     {
         var row = new Grid
         {
-            Margin = new Thickness(0, 9, 0, 9)
+            Margin = new Thickness(0, 6, 0, 6)
         };
         row.ColumnDefinitions.Add(new ColumnDefinition());
         row.ColumnDefinitions.Add(new ColumnDefinition
@@ -115,7 +121,7 @@ public partial class MainWindow
         });
         var words = new StackPanel
         {
-            Margin = new Thickness(0, 0, 20, 0)
+            Margin = new Thickness(0, 0, 14, 0)
         };
         var title = FeatureText(label, 13);
         title.Margin = new Thickness(0, 0, 0, 3);
@@ -146,9 +152,10 @@ public partial class MainWindow
     {
         var line = new DockPanel
         {
-            Margin = new Thickness(0, 10, 0, 0)
+            Margin = new Thickness(0, 6, 0, 0)
         };
         var number = FeatureText($"{value:0.##}{suffix}", 12, true);
+        Typography.SetNumeralAlignment(number, FontNumeralAlignment.Tabular);
         number.HorizontalAlignment = HorizontalAlignment.Right;
         DockPanel.SetDock(number, Dock.Right);
         line.Children.Add(number);
@@ -161,7 +168,7 @@ public partial class MainWindow
             Value = value,
             TickFrequency = step,
             IsSnapToTickEnabled = true,
-            Margin = new Thickness(0, 0, 0, 8),
+            Margin = new Thickness(0, 0, 0, 6),
             Style = (Style)FindResource("OrbitSlider")
         };
         System.Windows.Automation.AutomationProperties.SetName(slider, label);
@@ -200,7 +207,7 @@ public partial class MainWindow
     {
         var hero = new Grid
         {
-            Margin = new Thickness(0, 0, 0, 18)
+            Margin = new Thickness(0, 0, 0, 12)
         };
         hero.ColumnDefinitions.Add(new ColumnDefinition
         {
@@ -213,7 +220,7 @@ public partial class MainWindow
         var text = new StackPanel
         {
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 24, 0)
+            Margin = new Thickness(0, 0, 16, 0)
         };
         text.Children.Add(FeatureText("Pick your style", 26));
         text.Children.Add(FeatureText("Changes save automatically.", 13, true));
@@ -268,7 +275,7 @@ public partial class MainWindow
             });
             inner.Children.Add(art);
             var caption = FeatureText(name, 12);
-            caption.Margin = new Thickness(10, 9, 10, 9);
+            caption.Margin = new Thickness(6, 6, 6, 6);
             inner.Children.Add(caption);
             button.Content = new Border
             {
@@ -298,7 +305,7 @@ public partial class MainWindow
         {
             Header = "Customize",
             Foreground = Brushes.White,
-            Margin = new Thickness(0, 0, 0, 18),
+            Margin = new Thickness(0, 0, 0, 12),
             Content = columns
         });
         var colors = CustomSection("Color & surfaces", "Set the accent and shape of your interface.", "palette", left);
@@ -330,7 +337,7 @@ public partial class MainWindow
         var hexBox = new TextBox
         {
             Text = preferences.Accent,
-            Padding = new Thickness(10),
+            Padding = new Thickness(6),
             Foreground = Brushes.White,
             Background = new SolidColorBrush(Color.FromRgb(11, 9, 17)),
             BorderBrush = new SolidColorBrush(Color.FromRgb(66, 50, 78)),
@@ -373,17 +380,14 @@ public partial class MainWindow
         Choices(wallpaper, "Image fit", ["Fill", "Fit", "Stretch"], preferences.ImageFit, x => preferences.ImageFit = x);
 
         var layout = CustomSection("Type & layout", "Choose the balance between space and information.", "dashboard", left);
-        Choices(layout, "Typeface", ["Segoe UI", "Arial", "Consolas"], preferences.Font, x => preferences.Font = x);
+        Choices(layout, "Typeface", ["Segoe UI", "Arial"], preferences.Font, x => preferences.Font = x);
         SliderSetting(layout, "Content scale", 85, 120, preferences.TextScale * 100, 5, x => preferences.TextScale = x / 100, "%");
-        SliderSetting(layout, "Sidebar width", 200, 280, preferences.SidebarWidth, 10, x => preferences.SidebarWidth = x, " px");
+        SliderSetting(layout, "Sidebar width", 180, 260, preferences.SidebarWidth, 10, x => preferences.SidebarWidth = x, " px");
         ToggleSetting(layout, "Compact sidebar", "Use tighter navigation spacing.", preferences.Compact, x => preferences.Compact = x);
         ToggleSetting(layout, "Show navigation labels", "Turn off for an icon-only sidebar.", preferences.ShowNavLabels, x => preferences.ShowNavLabels = x);
 
-        var motion = CustomSection("Atmosphere & motion", "A quiet backdrop or a little movement.", "auto_awesome", right);
-        ToggleSetting(motion, "Animated star field", "Add softly twinkling stars to the background.", preferences.Stars, x => preferences.Stars = x);
-        SliderSetting(motion, "Star density", 10, 120, preferences.StarCount, 10, x => preferences.StarCount = (int)x);
-        SliderSetting(motion, "Animation speed", .25, 2, preferences.StarSpeed, .25, x => preferences.StarSpeed = x, "×");
-        ToggleSetting(motion, "Reduce motion", "Keep stars still and remove page and card animations.", preferences.ReducedMotion, x => preferences.ReducedMotion = x);
+        var motion = CustomSection("Interaction feedback", "Short transitions confirm actions and reveal loaded content.", "settings", right);
+        ToggleSetting(motion, "Reduce motion", "Use static skeletons and immediate state changes.", preferences.ReducedMotion, x => preferences.ReducedMotion = x);
 
         var footer = new WrapPanel();
         footer.Children.Add(FeatureButton("Export theme", ExportTheme));
@@ -481,7 +485,7 @@ public partial class MainWindow
         Choices(mods, "Discover results per page", ["8", "16", "24"], preferences.DiscoverPageSize.ToString(), x =>
         {
             preferences.DiscoverPageSize = discoverPageSize = int.Parse(x);
-            DiscoverPageSizeButton.Content = $"View: {discoverPageSize}";
+            UpdateDiscoverChoices();
             ApplyDiscoverFilters();
         });
         var data = CustomSection("Data & companion", "Manage local Orbit files and the base game companion.", "folder_open", SettingsContent);
@@ -508,7 +512,7 @@ public partial class MainWindow
             {
                 Header = panel == startup ? "Startup" : panel == mods ? "Downloads" : "More",
                 Foreground = Brushes.White,
-                Margin = new Thickness(0, 0, 0, 14),
+                Margin = new Thickness(0, 0, 0, 10),
                 Content = card
             });
         }
@@ -517,11 +521,16 @@ public partial class MainWindow
     private void ApplyAppearance()
     {
         NormalizePreferences();
+        InteractionMotion.SetReduced(this, preferences.ReducedMotion);
         var accent = (Color)ColorConverter.ConvertFromString(preferences.Accent);
         Resources["Accent"] = new SolidColorBrush(accent);
-        Resources["AccentLight"] = new SolidColorBrush(Color.FromRgb((byte)((accent.R + 255) / 2), (byte)((accent.G + 255) / 2), (byte)((accent.B + 255) / 2)));
-        Resources["AccentSoft"] = new SolidColorBrush(Color.FromArgb(75, accent.R, accent.G, accent.B));
-        Resources["Surface"] = new SolidColorBrush(Color.FromArgb((byte)(255 * preferences.SurfaceOpacity), 20, 16, 25));
+        var perceptual = PerceptualColor.ToOklch(accent);
+        Resources["AccentForeground"] = new SolidColorBrush(PerceptualColor.Foreground(accent));
+        Resources["AccentLight"] = new SolidColorBrush(PerceptualColor.FromOklch(perceptual with { L = .84, C = Math.Min(perceptual.C, .13) }));
+        Resources["AccentSoft"] = new SolidColorBrush(PerceptualColor.FromOklch(perceptual with { L = .28, C = Math.Min(perceptual.C, .07) }));
+        foreach (var skeleton in VisualDescendants(this).OfType<FrameworkElement>().Where(Skeleton.GetActive)) Skeleton.Update(skeleton);
+        if (preferences.ReducedMotion) { CancelNewsTransition(); foreach (var card in DiscoverModsPanel.Children.OfType<UIElement>()) { card.BeginAnimation(OpacityProperty, null); card.Opacity = 1; } }
+        Resources["Surface"] = new SolidColorBrush(Color.FromArgb((byte)(255 * preferences.SurfaceOpacity), 24, 19, 30));
         Resources["ControlSurface"] = new SolidColorBrush(Color.FromRgb(37, 29, 45));
         Resources["CardRadius"] = new CornerRadius(preferences.CornerRadius);
         FontFamily = new FontFamily(preferences.Font);
@@ -562,7 +571,7 @@ public partial class MainWindow
     })
         {
             if (page.Content is FrameworkElement content) content.LayoutTransform = new ScaleTransform(preferences.TextScale, preferences.TextScale);
-            if (page != FeaturePage) page.Style = preferences.ReducedMotion ? null : (Style)FindResource("AnimatedPage");
+            page.Style = null;
             if (preferences.ReducedMotion)
             {
                 page.BeginAnimation(OpacityProperty, null);
@@ -580,27 +589,11 @@ public partial class MainWindow
         ContentBackground.Background = BackgroundBrush();
         foreach (var child in StarField.Children.OfType<Ellipse>()) child.BeginAnimation(OpacityProperty, null);
         StarField.Children.Clear();
-        if (preferences.Stars)
+        FitSidebar();
+        if (preferences.ReducedMotion)
         {
-            var random = new Random(42);
-            for (var i = 0; i < preferences.StarCount; i++)
-            {
-                var star = new Ellipse
-                {
-                    Width = 1 + random.NextDouble() * 2,
-                    Height = 2,
-                    Fill = Brushes.White,
-                    Opacity = .3,
-                    Tag = new Point(random.NextDouble(), random.NextDouble())
-                };
-                StarField.Children.Add(star);
-                if (!preferences.ReducedMotion) star.BeginAnimation(OpacityProperty, new DoubleAnimation(.08, .5, TimeSpan.FromSeconds((2 + random.NextDouble() * 4) / preferences.StarSpeed))
-                {
-                    AutoReverse = true,
-                    RepeatBehavior = RepeatBehavior.Forever
-                });
-            }
-            LayoutStars();
+            HeroContent.BeginAnimation(OpacityProperty, null); HeroContent.Opacity = 1;
+            HeroTranslate.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, null); HeroTranslate.Y = 0;
         }
         RefreshThemePreview();
     }
@@ -653,16 +646,6 @@ public partial class MainWindow
         }
     }
 
-    private void LayoutStars()
-    {
-        foreach (var star in StarField.Children.OfType<Ellipse>())
-        {
-            var point = (Point)star.Tag;
-            Canvas.SetLeft(star, point.X * Math.Max(1, ContentBackground.ActualWidth));
-            Canvas.SetTop(star, point.Y * Math.Max(1, ContentBackground.ActualHeight));
-        }
-    }
-
     private void RefreshThemePreview()
     {
         if (themePreview == null) return;
@@ -674,7 +657,7 @@ public partial class MainWindow
         {
             Background = (Brush)Resources["Surface"],
             CornerRadius = new CornerRadius(preferences.CornerRadius / 2),
-            Padding = new Thickness(10),
+            Padding = new Thickness(6),
             Child = FeatureText("Ready for your next session", 12)
         });
         preview.Children.Add(new Border
@@ -684,7 +667,7 @@ public partial class MainWindow
             Height = 7,
             HorizontalAlignment = HorizontalAlignment.Left,
             CornerRadius = new CornerRadius(3),
-            Margin = new Thickness(0, 10, 0, 0)
+            Margin = new Thickness(0, 6, 0, 0)
         });
         themePreview.Child = preview;
     }

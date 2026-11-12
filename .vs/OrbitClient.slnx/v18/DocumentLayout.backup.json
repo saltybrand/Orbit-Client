@@ -3,16 +3,20 @@
   "WorkspaceRootPath": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|c:\\projects\\orbitclient\\orbitclient\\orbit client\\orbitclient\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|solutionrelative:orbitclient\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|c:\\projects\\orbitclient\\orbitclient\\orbit client\\orbitclient\\mainwindow.accounts.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|solutionrelative:orbitclient\\mainwindow.accounts.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|c:\\projects\\orbitclient\\orbitclient\\orbit client\\orbitclient\\scripts\\apimanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|solutionrelative:orbitclient\\scripts\\apimanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|c:\\projects\\orbitclient\\orbitclient\\orbit client\\orbitclient\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|solutionrelative:orbitclient\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|c:\\projects\\orbitclient\\orbitclient\\orbit client\\orbitclient\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|solutionrelative:orbitclient\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B4BEE434-D75A-BE71-2167-4F98A185E24D}|OrbitClient\\OrbitClient.csproj|c:\\projects\\orbitclient\\orbitclient\\orbit client\\orbitclient\\scripts\\orbithttp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -34,7 +38,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Bookmark",
@@ -46,7 +50,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
+              "Title": "MainWindow.Accounts.cs",
+              "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\MainWindow.Accounts.cs",
+              "RelativeDocumentMoniker": "OrbitClient\\MainWindow.Accounts.cs",
+              "ToolTip": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\MainWindow.Accounts.cs",
+              "RelativeToolTip": "OrbitClient\\MainWindow.Accounts.cs",
+              "ViewState": "AgIAANYAAAAAAAAAAAAcwMsAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-10T02:48:46.721Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "OrbitHttp.cs",
               "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Scripts\\OrbitHttp.cs",
               "RelativeDocumentMoniker": "OrbitClient\\Scripts\\OrbitHttp.cs",
@@ -58,42 +74,43 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "PurpleTheme.xaml",
               "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Themes\\PurpleTheme.xaml",
               "RelativeDocumentMoniker": "OrbitClient\\Themes\\PurpleTheme.xaml",
               "ToolTip": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Themes\\PurpleTheme.xaml",
               "RelativeToolTip": "OrbitClient\\Themes\\PurpleTheme.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-11-08T00:12:49.524Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ApiManager.cs",
-              "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Scripts\\ApiManager.cs",
-              "RelativeDocumentMoniker": "OrbitClient\\Scripts\\ApiManager.cs",
-              "ToolTip": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Scripts\\ApiManager.cs",
-              "RelativeToolTip": "OrbitClient\\Scripts\\ApiManager.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAcwBIAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-08T00:12:40.002Z",
+              "WhenOpened": "2026-11-08T00:12:49.524Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "ApiManager.cs",
+              "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Scripts\\ApiManager.cs",
+              "RelativeDocumentMoniker": "OrbitClient\\Scripts\\ApiManager.cs",
+              "ToolTip": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Scripts\\ApiManager.cs",
+              "RelativeToolTip": "OrbitClient\\Scripts\\ApiManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAABjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T00:12:40.002Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
               "Title": "MainWindow.xaml",
               "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\MainWindow.xaml",
               "RelativeDocumentMoniker": "OrbitClient\\MainWindow.xaml",
               "ToolTip": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\MainWindow.xaml",
               "RelativeToolTip": "OrbitClient\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-10-12T20:40:28.618Z"
+              "WhenOpened": "2026-10-12T20:40:28.618Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "ErrorManager.cs",
               "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\Scripts\\ErrorManager.cs",
               "RelativeDocumentMoniker": "OrbitClient\\Scripts\\ErrorManager.cs",
@@ -105,7 +122,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "MainWindow.xaml.cs",
               "DocumentMoniker": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "OrbitClient\\MainWindow.xaml.cs",

@@ -26,9 +26,9 @@ public partial class MainWindow
         {
             if (message.Type != "cape_presence_clear")
             {
-                request = JsonSerializer.Deserialize<CapePresenceRequest>(message.Data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (request == null || !request.HasValidBinding() || (request.Revision?.Length ?? 0) > 512) return;
+                request = CapePipeRequests.Presence(message.Data, remote);
             }
+            else CapePipeRequests.Empty(message.Data);
             var key = remote ? "remote:" + request!.Actor : message.Type;
             var now = Environment.TickCount64;
             if (networkCapeRequests.TryGetValue(key, out var last) && now - last < 2000) return;
