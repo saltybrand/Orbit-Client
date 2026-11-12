@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "zDxXBfT8kf0=",
+  "dgSpecHash": "E2RujaRAyto=",
   "success": true,
   "projectFilePath": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\OrbitClient.csproj",
   "expectedPackageFiles": [
@@ -22,7 +22,10 @@
     "C:\\Users\\droth\\.nuget\\packages\\supabase.storage\\8.3.0\\supabase.storage.8.3.0.nupkg.sha512",
     "C:\\Users\\droth\\.nuget\\packages\\system.identitymodel.tokens.jwt\\7.5.1\\system.identitymodel.tokens.jwt.7.5.1.nupkg.sha512",
     "C:\\Users\\droth\\.nuget\\packages\\system.reactive\\6.1.0\\system.reactive.6.1.0.nupkg.sha512",
-    "C:\\Users\\droth\\.nuget\\packages\\websocket.client\\5.5.0\\websocket.client.5.5.0.nupkg.sha512"
+    "C:\\Users\\droth\\.nuget\\packages\\websocket.client\\5.5.0\\websocket.client.5.5.0.nupkg.sha512",
+    "C:\\Users\\droth\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\10.0.12\\microsoft.netcore.app.runtime.win-x64.10.0.12.nupkg.sha512",
+    "C:\\Users\\droth\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\10.0.12\\microsoft.windowsdesktop.app.runtime.win-x64.10.0.12.nupkg.sha512",
+    "C:\\Users\\droth\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\10.0.12\\microsoft.aspnetcore.app.runtime.win-x64.10.0.12.nupkg.sha512"
   ],
   "logs": []
 }

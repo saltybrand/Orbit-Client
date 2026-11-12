@@ -303,6 +303,309 @@
           }
         }
       }
+    },
+    "net10.0-windows/win-x64": {
+      "BirdMessenger/4.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/BirdMessenger.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/BirdMessenger.dll": {}
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.8": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/_._": {}
+        }
+      },
+      "Microsoft.Extensions.Logging.Abstractions/10.0.8": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.8"
+        },
+        "compile": {
+          "lib/net10.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/Microsoft.Extensions.Logging.Abstractions.targets": {}
+        }
+      },
+      "Microsoft.IdentityModel.Abstractions/7.5.1": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Microsoft.IdentityModel.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.Abstractions.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.JsonWebTokens/7.5.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.IdentityModel.Tokens": "7.5.1"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.Logging/7.5.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.IdentityModel.Abstractions": "7.5.1"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.IdentityModel.Logging.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.Logging.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.Tokens/7.5.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.IdentityModel.Logging": "7.5.1"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.IdentityModel.Tokens.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.Tokens.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.IO.RecyclableMemoryStream/3.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/Microsoft.IO.RecyclableMemoryStream.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Microsoft.IO.RecyclableMemoryStream.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "MimeMapping/4.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/MimeMapping.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/MimeMapping.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Supabase/8.3.0": {
+        "type": "package",
+        "dependencies": {
+          "Supabase.Core": "8.3.0",
+          "Supabase.Functions": "8.3.0",
+          "Supabase.Gotrue": "8.3.0",
+          "Supabase.Postgrest": "8.3.0",
+          "Supabase.Realtime": "8.3.0",
+          "Supabase.Storage": "8.3.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/Supabase.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Supabase.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Supabase.Core/8.3.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.1/Supabase.Core.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Supabase.Core.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Supabase.Functions/8.3.0": {
+        "type": "package",
+        "dependencies": {
+          "Supabase.Core": "8.3.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/Supabase.Functions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Supabase.Functions.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Supabase.Gotrue/8.3.0": {
+        "type": "package",
+        "dependencies": {
+          "Supabase.Core": "8.3.0",
+          "System.IdentityModel.Tokens.Jwt": "7.5.1"
+        },
+        "compile": {
+          "lib/netstandard2.1/Supabase.Gotrue.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Supabase.Gotrue.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Supabase.Postgrest/8.3.0": {
+        "type": "package",
+        "dependencies": {
+          "Supabase.Core": "8.3.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/Supabase.Postgrest.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Supabase.Postgrest.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Supabase.Realtime/8.3.0": {
+        "type": "package",
+        "dependencies": {
+          "Supabase.Core": "8.3.0",
+          "Supabase.Postgrest": "8.3.0",
+          "Websocket.Client": "5.5.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/Supabase.Realtime.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Supabase.Realtime.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Supabase.Storage/8.3.0": {
+        "type": "package",
+        "dependencies": {
+          "BirdMessenger": "4.0.0",
+          "MimeMapping": "4.0.0",
+          "Supabase.Core": "8.3.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/Supabase.Storage.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Supabase.Storage.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "System.IdentityModel.Tokens.Jwt/7.5.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.IdentityModel.JsonWebTokens": "7.5.1",
+          "Microsoft.IdentityModel.Tokens": "7.5.1"
+        },
+        "compile": {
+          "lib/net8.0/System.IdentityModel.Tokens.Jwt.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.IdentityModel.Tokens.Jwt.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "System.Reactive/6.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/System.Reactive.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/System.Reactive.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
+      },
+      "Websocket.Client/5.5.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.8",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.1",
+          "System.Reactive": "6.1.0"
+        },
+        "compile": {
+          "lib/net10.0/Websocket.Client.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Websocket.Client.dll": {
+            "related": ".xml"
+          }
+        }
+      }
     }
   },
   "libraries": {
@@ -748,7 +1051,7 @@
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "1.0.0",
+    "version": "1.0.11",
     "restore": {
       "projectUniqueName": "C:\\Projects\\OrbitClient\\OrbitClient\\Orbit Client\\OrbitClient\\OrbitClient.csproj",
       "projectName": "OrbitClient",
@@ -811,6 +1114,20 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
+            "version": "[10.0.12, 10.0.12]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Runtime.win-x64",
+            "version": "[10.0.12, 10.0.12]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
+            "version": "[10.0.12, 10.0.12]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
@@ -1110,6 +1427,11 @@
           "System.Xml.XPath": "(,4.3.32767]",
           "System.Xml.XPath.XDocument": "(,5.0.32767]"
         }
+      }
+    },
+    "runtimes": {
+      "win-x64": {
+        "#import": []
       }
     }
   }
