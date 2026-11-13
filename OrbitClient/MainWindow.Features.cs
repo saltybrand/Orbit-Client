@@ -51,7 +51,7 @@ public partial class MainWindow
         preferences.GamePath = InstallPath.Text.Trim();
         preferences.CloseAfterLaunch = CloseAppAfterLaunchButton.IsChecked == true;
         preferences.CheckUpdates = UpdateButton.IsChecked == true;
-        try { workspace.SavePreferences(preferences); }
+        try { workspace.SavePreferences(preferences); SendCompanionTheme(); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { MessageBox.Show(this, ex.Message, "Unable to save preferences"); }
     }
@@ -283,7 +283,9 @@ public partial class MainWindow
                 var newer = known && Version.Parse(match!.version.TrimStart('v')) > Version.Parse(mod.Version.TrimStart('v'));
                 technical.Children.Add(FeatureText(!known ? "Update status unknown · check the catalog or the mod author's release page."
                     : newer ? $"Update available · v{match!.version}" : "Up to date with the catalog.", 12, true));
-                if (newer) row.Children.Add(FeatureButton("Update mod", async () =>
+                if (newer && !OrbitContentService.HasApprovedModHash(match!))
+                    technical.Children.Add(FeatureText("This update is awaiting DLL approval. Refresh the catalog after its maintainer publishes the approved SHA-256.", 12, true));
+                if (newer && OrbitContentService.HasApprovedModHash(match!)) row.Children.Add(FeatureButton("Update mod", async () =>
                 {
                     await InstallModFile(match!, mod.Path);
                     if (featurePage == "Mod Library") { OpenFeaturePage("Mod Library"); SetFeatureStatus("Mod updated. Its enabled state was preserved."); }
@@ -297,32 +299,28 @@ public partial class MainWindow
         catch (Exception ex) { SetFeatureStatus(ex.Message); }
     }
 
-    private async Task InstallModFile(DiscoverMod mod, string? existingPath = null)
+    private async Task InstallModFile(DiscoverMod mod, string? existingPath = null, Action<string>? progress = null)
     {
+        OrbitContentService.RequireModApproval(mod);
         await WithFileOperation(async root =>
         {
+            progress?.Invoke("Checking game folder and BepInEx…");
             await BepInExInstaller.EnsureInstalledAsync(root,
                 () => MessageBox.Show(this,
                     "BepInEx is needed to install mods. Install it now? Choosing No cancels the download.",
                     "BepInEx required", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes,
                 () => InstallBepInEx(root));
             if (!Uri.TryCreate(orbitContent.ResolveAssetUrl(mod.download), UriKind.Absolute, out var uri) || uri.Scheme != "https") throw new IOException("A secure download URL is required.");
-            var name = System.IO.Path.GetFileName(uri.LocalPath);
-            if (!name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
-                throw new IOException("Only DLL downloads are supported.");
             var plugins = System.IO.Path.Combine(root, "BepInEx", "plugins");
-            var destination = existingPath ?? System.IO.Path.Combine(plugins, name);
-            if (!System.IO.Path.GetFullPath(destination).StartsWith(plugins + System.IO.Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                throw new IOException("Invalid mod destination.");
-            if (existingPath == null && File.Exists(destination + ".disabled")) destination += ".disabled";
+            progress?.Invoke($"Downloading {mod.name}…");
+            var bytes = await orbitContent.DownloadAsync(uri.AbsoluteUri, ModSubmissionFile.MaximumBytes, TimeSpan.FromSeconds(preferences.DownloadTimeout));
+            progress?.Invoke("Verifying approved SHA-256, DLL and existing copies…");
+            var destination = await Task.Run(() => DiscoverInstallation.Destination(root, mod, bytes, existingPath));
+            WorkspaceService.RequireGameClosed();
+            if (preferences.AutoSnapshot) { progress?.Invoke("Creating recovery snapshot…"); SaveFeaturePreferences(); await Task.Run(() => workspace.CreateSnapshot(root)); }
+            WorkspaceService.RequireGameClosed();
             WorkspaceService.EnsureNoLinks(destination);
-            var bytes = await orbitContent.DownloadAsync(uri.AbsoluteUri, 64 * 1024 * 1024, TimeSpan.FromSeconds(preferences.DownloadTimeout));
-            OrbitContentService.VerifyModDownload(mod, bytes);
-            using (var pe = new System.Reflection.PortableExecutable.PEReader(new MemoryStream(bytes)))
-                if (!pe.HasMetadata) throw new IOException("The download is not a managed DLL.");
-            WorkspaceService.RequireGameClosed();
-            if (preferences.AutoSnapshot) { SaveFeaturePreferences(); await Task.Run(() => workspace.CreateSnapshot(root)); }
-            WorkspaceService.RequireGameClosed();
+            progress?.Invoke("Installing verified DLL…");
             Directory.CreateDirectory(plugins);
             await Task.Run(() => WorkspaceService.AtomicWrite(destination, bytes));
         });

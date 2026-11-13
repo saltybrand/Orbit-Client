@@ -251,7 +251,9 @@ public sealed class WorkspaceService
           .Select(ReadMod).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
-    public static LocalMod ReadMod(string path)
+    public static LocalMod ReadMod(string path) => ReadMod(path, null);
+
+    public static LocalMod ReadMod(string path, Stream? content)
     {
         var name = System.IO.Path.GetFileName(path).Replace(".disabled", "", StringComparison.OrdinalIgnoreCase);
         string version = "Unknown", guid = "";
@@ -260,7 +262,7 @@ public sealed class WorkspaceService
         try
         {
             using
-            var stream = File.OpenRead(path);
+            var stream = content ?? File.OpenRead(path);
             using
             var pe = new PEReader(stream);
             if (!pe.HasMetadata) throw new BadImageFormatException("Not a managed mod assembly.");

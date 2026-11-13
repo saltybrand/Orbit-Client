@@ -204,11 +204,13 @@ namespace OrbitClient.Scripts
 
             try
             {
+                var output = writer;
+                if (output == null || pipe?.IsConnected != true) return;
                 string json = JsonSerializer.Serialize(message);
 
-                await writer.WriteLineAsync(json);
+                await output.WriteLineAsync(json);
 
-                await writer.FlushAsync();
+                await output.FlushAsync();
 
                 Console.WriteLine($"[ORBIT -> MOD] {message.Type}");
             }

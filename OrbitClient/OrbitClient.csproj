@@ -27,6 +27,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\..\Shared\CapeProtocol.cs" Link="Scripts\CapeProtocol.cs" />
+    <Compile Include="..\..\..\Shared\ThemeProtocol.cs" Link="Scripts\ThemeProtocol.cs" />
     <EmbeddedResource Include="..\..\..\OrbitClientGtag\OrbitClientGtag\bin\Release\netstandard2.1\OrbitClient.dll"
                       LogicalName="OrbitClient.BundledCompanion.dll"
                       Condition="Exists('..\..\..\OrbitClientGtag\OrbitClientGtag\bin\Release\netstandard2.1\OrbitClient.dll')" />

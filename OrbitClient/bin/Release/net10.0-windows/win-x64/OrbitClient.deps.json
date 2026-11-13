@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v10.0": {},
     ".NETCoreApp,Version=v10.0/win-x64": {
-      "OrbitClient/1.0.12": {
+      "OrbitClient/1.1.0": {
         "dependencies": {
           "Supabase": "8.3.0",
           "runtimepack.Microsoft.NETCore.App.Runtime.win-x64": "10.0.12",
@@ -1169,7 +1169,7 @@
     }
   },
   "libraries": {
-    "OrbitClient/1.0.12": {
+    "OrbitClient/1.1.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

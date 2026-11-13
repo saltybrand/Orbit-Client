@@ -116,14 +116,14 @@
                         <Button Content="Installed mods" Tag="Mod Library" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
                         <Button Content="Capes" Tag="Capes" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
                         
-                        <Button Margin="0,12,0,2" Tag="News" Click="Nav_Click" Style="{StaticResource AnimatedNav}">
+                        <Button Margin="0,1,0,1" Tag="News" Click="Nav_Click" Style="{StaticResource AnimatedNav}">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="/OrbitClient;component/Assets/NewsIcon.png" Width="16" Height="16" />
                                 <TextBlock Text="News" Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"  TextWrapping="Wrap" />
                             </StackPanel>
                         </Button>
                         
-                        <Button Margin="0,12,0,2" Content="Snapshots" Tag="Snapshots" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
+                        <Button Margin="0,1,0,1" Content="Snapshots" Tag="Snapshots" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
                         <Button Content="BepInEx" Tag="BepInEx" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
                         <Button Content="Appearance" Tag="Appearance" Click="Nav_Click" Style="{StaticResource AnimatedNav}" />
                         <Button Tag="Settings" Click="Nav_Click" Style="{StaticResource AnimatedNav}">
@@ -144,7 +144,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="132" />
+                    <ColumnDefinition Width="138" />
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock x:Name="PageTitle" Text="Home" Foreground="#F6F1F8" FontSize="20" FontWeight="SemiBold"  TextWrapping="Wrap" />
@@ -157,11 +157,42 @@
                         <TextBlock x:Name="StatusText" Text="Services offline" Foreground="{DynamicResource Muted}" FontSize="12"  TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="MinimizeWindowButton" Content="−" Click="Minimize_Click" Style="{StaticResource WindowBtn}" />
-                    <Button x:Name="MaximizeWindowButton" Content="□" Click="Maximize_Click" Style="{StaticResource WindowBtn}" FontSize="12" />
-                    <Button x:Name="CloseWindowButton" Content="×" Click="Close_Click" Style="{StaticResource WindowBtn}" />
-                </StackPanel>
+                <Border Grid.Column="2" Background="Transparent" Padding="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="MinimizeWindowButton" Click="Minimize_Click" Style="{StaticResource WindowBtn}" ToolTip="Minimize" AutomationProperties.Name="Minimize">
+                            <Path Data="M 1,6 L 11,6" Width="12" Height="12" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" IsHitTestVisible="False" />
+                        </Button>
+                        <Button x:Name="MaximizeWindowButton" Click="Maximize_Click">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource WindowBtn}">
+                                    <Setter Property="ToolTip" Value="Maximize" />
+                                    <Setter Property="AutomationProperties.Name" Value="Maximize" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" Value="Maximized">
+                                            <Setter Property="ToolTip" Value="Restore" />
+                                            <Setter Property="AutomationProperties.Name" Value="Restore" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Path Width="12" Height="12" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.25" StrokeLineJoin="Round" IsHitTestVisible="False">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Data" Value="M 1.5,1.5 H 10.5 V 10.5 H 1.5 Z" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" Value="Maximized">
+                                                <Setter Property="Data" Value="M 3.5,3.5 H 0.75 V 11.25 H 8.5 V 8.5 M 3.5,0.75 H 11.25 V 8.5 H 3.5 Z" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                        </Button>
+                        <Button x:Name="CloseWindowButton" Click="Close_Click" Style="{StaticResource CloseWindowBtn}" ToolTip="Close Orbit" AutomationProperties.Name="Close Orbit">
+                            <Path Data="M 2,2 L 10,10 M 10,2 L 2,10" Width="12" Height="12" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round" IsHitTestVisible="False" />
+                        </Button>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
         <Grid Grid.Column="1" Grid.Row="1">
@@ -280,7 +311,7 @@
                 </StackPanel>
             </ScrollViewer>
             <ScrollViewer x:Name="Discover" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <Grid Margin="16"><Border Style="{StaticResource Card}" Padding="32" MaxWidth="1250" VerticalAlignment="Top"><StackPanel><TextBlock Text="Discover" Foreground="#F4EFF7" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap" /><TextBlock Text="Coming soon" Foreground="#A99AB2" FontSize="18" Margin="0,10,0,0" TextWrapping="Wrap" /></StackPanel></Border><StackPanel x:Name="DiscoverContent" Margin="16" MaxWidth="1250" Visibility="Collapsed">
+                <Grid Margin="16"><StackPanel x:Name="DiscoverContent" Margin="0" MaxWidth="1250">
                     <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel Margin="0,0,16,0">
                             <TextBlock x:Name="DiscoverHeading" Text="Find Gorilla Tag mods" Foreground="#F4EFF7" FontSize="24" FontWeight="SemiBold"  TextWrapping="Wrap" />

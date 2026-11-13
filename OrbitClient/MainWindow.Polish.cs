@@ -16,9 +16,6 @@ public partial class MainWindow
 
     private void InitializePolish()
     {
-        MaterialSymbols.Label(MinimizeWindowButton, "Minimize", "minimize", false);
-        MaterialSymbols.Label(MaximizeWindowButton, "Maximize or restore", "crop_square", false);
-        MaterialSymbols.Label(CloseWindowButton, "Close Orbit", "close", false);
         SourceInitialized += (_, _) => UpdateWindowCorners();
         StateChanged += (_, _) => UpdateWindowCorners();
         WindowRoot.SizeChanged += (_, _) => { ClipWindowContent(); CancelNewsTransition(); };
@@ -56,8 +53,7 @@ public partial class MainWindow
         foreach (var button in buttons)
         {
             button.Height = height;
-            var key = button.Tag as string;
-            button.Margin = new Thickness(0, key is "News" or "Snapshots" ? 8 : 1, 0, 1);
+            button.Margin = new Thickness(0, 1, 0, 1);
             button.Padding = new Thickness(8, 0, 8, 0);
         }
     }

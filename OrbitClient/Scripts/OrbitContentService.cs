@@ -183,7 +183,7 @@ public sealed class OrbitContentService : IDisposable
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, cancellationToken);
         deadline.CancelAfter(TimeSpan.FromSeconds(20));
         var mods = new List<OrbitClient.DataModels.DiscoverMod>();
-        for (var page = 0; page < 10; page++)
+        for (var page = 0; page < 100; page++)
         {
             using var response = await OrbitHttp.GetAsync(api, () => new HttpRequestMessage(HttpMethod.Get,
                 "rest/v1/rpc/orbit_published_mods?requested_page=" + page), deadline.Token).ConfigureAwait(false);
@@ -203,15 +203,22 @@ public sealed class OrbitContentService : IDisposable
             }
             if (rows.Count < 100) return mods;
         }
-        return mods;
+        throw new IOException("The community catalog exceeds the supported size. Refine the server catalog before retrying.");
+    }
+
+    public static bool HasApprovedModHash(OrbitClient.DataModels.DiscoverMod mod) =>
+        mod.sha256 is not null && System.Text.RegularExpressions.Regex.IsMatch(mod.sha256, "\\A[a-f0-9]{64}\\z");
+
+    public static void RequireModApproval(OrbitClient.DataModels.DiscoverMod mod)
+    {
+        if (!HasApprovedModHash(mod))
+            throw new IOException("Installation is unavailable until the catalog maintainer publishes this DLL's approved SHA-256. Refresh Discover after it is approved.");
     }
 
     public static void VerifyModDownload(OrbitClient.DataModels.DiscoverMod mod, byte[] bytes)
     {
-        if (mod.id.StartsWith("submission-", StringComparison.Ordinal) && string.IsNullOrWhiteSpace(mod.sha256))
-            throw new IOException("The community mod is missing its approved file hash.");
-        if (!string.IsNullOrWhiteSpace(mod.sha256) && (!System.Text.RegularExpressions.Regex.IsMatch(mod.sha256, "^[a-f0-9]{64}$")
-            || Convert.ToHexStringLower(SHA256.HashData(bytes)) != mod.sha256))
+        RequireModApproval(mod);
+        if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != mod.sha256)
             throw new IOException("The downloaded DLL does not match the approved file. Installation was stopped.");
     }
 

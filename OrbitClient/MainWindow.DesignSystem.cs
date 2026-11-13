@@ -45,7 +45,7 @@ public partial class MainWindow
             text.Children.Add(Skeleton.Bar(120, 12));
             Grid.SetColumn(text, 1);
             row.Children.Add(text);
-            var card = new Border { Style = (Style)FindResource("Card"), MinHeight = 132, Child = row, Margin = new Thickness(0, 0, 0, 10), IsHitTestVisible = false };
+            var card = new Border { Style = (Style)FindResource("Card"), MinHeight = 180, Child = row, Margin = new Thickness(0, 0, 0, 10), IsHitTestVisible = false };
             System.Windows.Automation.AutomationProperties.SetName(card, "Loading catalog item");
             target.Children.Add(card);
         }

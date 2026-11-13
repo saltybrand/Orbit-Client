@@ -22,6 +22,7 @@ public sealed record ModSubmission(Guid Id, Guid UserId, string Title, string De
     public string ChangeNotes { get; init; } = "";
     public string AuthorName { get; init; } = "Community";
     public bool IsCurrent { get; init; }
+    public bool IsRemoved { get; init; }
     public string ObjectPath => $"{UserId:D}/{BinaryId:D}/mod.dll";
     public string PublicObjectPath => $"{BinaryId:D}/{ModId:D}.dll";
     private static Guid? OptionalId(JsonElement row,string key) => row.TryGetProperty(key,out var value) && value.ValueKind==JsonValueKind.String ? value.GetGuid() : null;
@@ -43,7 +44,8 @@ public sealed record ModSubmission(Guid Id, Guid UserId, string Title, string De
             ChangeType=row.TryGetProperty("change_type",out var kind)?kind.GetString()??"release":"release",
             ChangeNotes=row.TryGetProperty("change_notes",out var notes)?notes.GetString()??"":"",
             AuthorName=row.TryGetProperty("author_name",out var author)?author.GetString()??"Community":"Community",
-            IsCurrent=row.TryGetProperty("is_current",out var current)&&current.ValueKind==JsonValueKind.True
+            IsCurrent=row.TryGetProperty("is_current",out var current)&&current.ValueKind==JsonValueKind.True,
+            IsRemoved=row.TryGetProperty("is_removed",out var removed)&&removed.ValueKind==JsonValueKind.True
         };
         if (!ModSubmissionFile.ValidName(item.FileName) || item.ByteSize is < 1 or > ModSubmissionFile.MaximumBytes
             || !System.Text.RegularExpressions.Regex.IsMatch(item.Sha256, "^[a-f0-9]{64}$")
@@ -58,7 +60,7 @@ public sealed partial class OrbitAccountService
     private readonly HttpClient submissionFiles;
     private const string SubmissionBucket = "orbit-mod-submissions";
 
-    private async Task<JsonElement> SubmissionRequestAsync(string path, object? body = null, bool read = false)
+    private async Task<JsonElement> SubmissionRequestAsync(string path, object? body = null, bool read = false, bool allowEmpty = false)
     {
         var token = await TokenAsync().ConfigureAwait(false);
         using var request = new HttpRequestMessage(read ? HttpMethod.Get : HttpMethod.Post, path);
@@ -69,10 +71,12 @@ public sealed partial class OrbitAccountService
         if (!response.IsSuccessStatusCode)
         {
             var code = "";
+            var message = "";
             try
             {
                 using var error = JsonDocument.Parse(await OrbitHttp.ReadBoundedAsync(response, 65536, lifetime.Token).ConfigureAwait(false));
                 code = Text(error.RootElement, "code");
+                message = Text(error.RootElement, "message");
             }
             catch (JsonException) { }
             throw new IOException(code switch
@@ -86,10 +90,15 @@ public sealed partial class OrbitAccountService
                 "P1007" => "The published version changed. Refresh your mods before editing or reviewing this change.",
                 "P1008" => "Choose a release version newer than the published version.",
                 "P1009" => "No listing changes were made. Edit the name, description, or category before submitting.",
-                _ => "Mod submissions are unavailable. Check your connection and try again later."
+                "P1010" => "This mod has been removed. Refresh your listings.",
+                _ => path.StartsWith("functions/v1/orbit-publish-mod", StringComparison.Ordinal)
+                    ? message.Length > 0 ? message[..Math.Min(message.Length, 512)] : "Publication failed. Refresh the review queue and retry."
+                    : "Mod submissions are unavailable. Check your connection and try again later."
             });
         }
-        using var document = JsonDocument.Parse(await OrbitHttp.ReadBoundedAsync(response, 1024 * 1024, lifetime.Token).ConfigureAwait(false));
+        var payload = await OrbitHttp.ReadBoundedAsync(response, 1024 * 1024, lifetime.Token).ConfigureAwait(false);
+        if (allowEmpty && payload.Length == 0) return default;
+        using var document = JsonDocument.Parse(payload);
         return document.RootElement.Clone();
     }
 
@@ -110,6 +119,9 @@ public sealed partial class OrbitAccountService
 
     public Task<ModSubmission> SubmitModAsync(string title, string description, ModSubmissionFile file, string version="1.0.0",string category="Community",string notes="") =>
         ProposeModRevisionAsync(null,title,description,version,category,notes,file);
+
+    public async Task RemoveOwnedModAsync(Guid modId) =>
+        _ = await SubmissionRequestAsync("rest/v1/rpc/orbit_remove_owned_mod", new { requested_mod_id = modId }, allowEmpty: true).ConfigureAwait(false);
 
     public async Task<ModSubmission> ProposeModRevisionAsync(ModSubmission? current, string title, string description, string version, string category, string notes, ModSubmissionFile? file = null)
     {
@@ -173,32 +185,8 @@ public sealed partial class OrbitAccountService
     public async Task<ModSubmission> PublishModSubmissionAsync(ModSubmission item)
     {
         if (item.Status != "approved") throw new IOException("Approve the submission before publishing it to Discover.");
-        if(item.ChangeType=="details")
-            return ModSubmission.Parse(await SubmissionRequestAsync("rest/v1/rpc/orbit_publish_mod_submission",new {requested_id=item.Id}).ConfigureAwait(false));
-        var bytes = await DownloadModForReviewAsync(item).ConfigureAwait(false);
-        var token = await TokenAsync().ConfigureAwait(false);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "storage/v1/object/orbit-approved-mods/"+item.PublicObjectPath);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Headers.Add("x-upsert", "false");
-        request.Content = new ByteArrayContent(bytes);
-        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-        using var response = await submissionFiles.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, lifetime.Token).ConfigureAwait(false);
-        RejectRevokedAvatarSession(response);
-        var duplicate = response.StatusCode == HttpStatusCode.Conflict;
-        if (!response.IsSuccessStatusCode && !duplicate && response.StatusCode == HttpStatusCode.BadRequest)
-        {
-            try { using var error = JsonDocument.Parse(await OrbitHttp.ReadBoundedAsync(response, 65536, lifetime.Token).ConfigureAwait(false)); duplicate = Text(error.RootElement, "error") is "Duplicate" or "ResourceAlreadyExists" || Text(error.RootElement, "code") is "Duplicate" or "ResourceAlreadyExists"; }
-            catch (JsonException) { }
-        }
-        if (!response.IsSuccessStatusCode && !duplicate) throw new IOException("The mod is approved, but publishing failed. Use Publish to Discover to retry.");
-        // An interrupted upload may already exist. Verify the actual public copy before listing it.
-        using var verify = new HttpRequestMessage(HttpMethod.Get, "storage/v1/object/public/orbit-approved-mods/"+item.PublicObjectPath);
-        using var uploaded = await submissionFiles.SendAsync(verify, HttpCompletionOption.ResponseHeadersRead, lifetime.Token).ConfigureAwait(false);
-        if (!uploaded.IsSuccessStatusCode) throw new IOException("The published file could not be verified. Retry publishing.");
-        var uploadedBytes = await OrbitHttp.ReadBoundedAsync(uploaded, ModSubmissionFile.MaximumBytes, lifetime.Token).ConfigureAwait(false);
-        if (uploadedBytes.Length != item.ByteSize || Convert.ToHexStringLower(SHA256.HashData(uploadedBytes)) != item.Sha256)
-            throw new IOException("The published file does not match the reviewed DLL. It has not been added to Discover.");
-        return ModSubmission.Parse(await SubmissionRequestAsync("rest/v1/rpc/orbit_publish_mod_submission", new { requested_id = item.Id }).ConfigureAwait(false));
+        // The server derives reviewer identity and verifies both copies. No client approval flags.
+        return ModSubmission.Parse(await SubmissionRequestAsync("functions/v1/orbit-publish-mod", new { requested_id = item.Id }).ConfigureAwait(false));
     }
 
     public async Task<(ModSubmission? Previous,ModSubmission Proposed)> GetModRevisionComparisonAsync(Guid id)

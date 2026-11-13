@@ -600,22 +600,7 @@ public partial class MainWindow
 
     private Brush BackgroundBrush()
     {
-        var color = preferences.Background
-        switch
-        {
-            "Nebula" => "#241333",
-            "Deep ocean" => "#082231",
-            "Aurora" => "#092E27",
-            "Ember" => "#321522",
-            "Slate" => "#1E293B",
-            "Forest" => "#102A1C",
-            "Sunset" => "#351A16",
-            "Cherry" => "#321223",
-            "Arctic" => "#12303A",
-            "Sand" => "#2D2615",
-            "Graphite" => "#18181B",
-            _ => "#08060A"
-        };
+        var color = OrbitClient.Appearance.ThemeMessage.BackgroundHex(preferences.Background);
         Brush brush = new LinearGradientBrush((Color)ColorConverter.ConvertFromString(color), Color.FromRgb(8, 6, 14), 35);
         if (!File.Exists(preferences.Background)) return brush;
         try

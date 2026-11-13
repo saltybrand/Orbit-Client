@@ -21,7 +21,7 @@ public partial class MainWindow : Window
     public static string steamapiKey = "";
     public static string steamId = "";
     public
-    const float currentVersion = 2f;
+    const float currentVersion = 3f;
     public static bool IsGtagRunning = false;
     private
     const int GtagAppID = 1533390;
@@ -97,7 +97,7 @@ public partial class MainWindow : Window
     }
     private void PipeServer_ModConnected()
     {
-        Dispatcher.BeginInvoke(() => { });
+        Dispatcher.BeginInvoke(() => SendCompanionTheme(force: true));
     }
     private void PipeServer_ModDisconnected()
     {
@@ -110,6 +110,12 @@ public partial class MainWindow : Window
             Console.WriteLine($"[MOD -> ORBIT] {message.Type}");
             switch (message.Type)
             {
+                case "theme_request":
+                    SendCompanionTheme(force: true);
+                    break;
+                case "theme_update":
+                    ReceiveCompanionTheme(message.Data);
+                    break;
                 case "cape_presence_request":
                 case "cape_presence_clear":
                 case "cape_remote_request":
@@ -177,12 +183,13 @@ public partial class MainWindow : Window
         {
             "Accounts" => ("Profile", "Sign in and manage your Orbit profile."),
             "Steam accounts" => ("Steam accounts", "Choose the Steam account to launch your game."),
-            "Discover" => ("Discover", "Coming soon"),
+            "Discover" => ("Discover", "Find your next mod."),
             "Settings" => ("Settings", "Configure Orbit Client and your game."),
             "News" => ("News", "Updates, stories, and guides from Orbit."),
             _ => ("Home", "")
         };
         if (page == "Discover" && discoverMods.Count == 0) _ = LoadDiscoverMods();
+        else if (page == "Discover") { RefreshDiscoverInventory(); ApplyDiscoverFilters(false); }
         if (page is "Snapshots"
           or "Mod Library"
           or "BepInEx"
@@ -801,11 +808,39 @@ public partial class MainWindow : Window
 
     private static string DiscoverAuthor(DiscoverMod mod) => mod.author?.Trim() ?? "";
 
-    public Task LoadDiscoverMods()
+    private Task? discoverLoadTask;
+    public Task LoadDiscoverMods() => discoverLoadTask is { IsCompleted: false }
+        ? discoverLoadTask : discoverLoadTask = LoadDiscoverModsCore();
+
+    private async Task LoadDiscoverModsCore()
     {
-        discoverMods.Clear();
-        DiscoverModsPanel.Children.Clear();
-        return Task.CompletedTask;
+        if (discoverLoading) return;
+        discoverLoading = true;
+        DiscoverRefreshButton.IsEnabled = false;
+        DiscoverEmptyState.Visibility = Visibility.Collapsed;
+        DiscoverStatusText.Text = "Loading published mods…";
+        ShowCatalogSkeletons(DiscoverModsPanel);
+        discoverLoadNotice = "";
+        var failures = new List<string>();
+        var loaded = new List<DiscoverMod>();
+        try
+        {
+            await LoadDiscoverPageSettings();
+            try { loaded.AddRange(await orbitContent.ReadPublishedModsAsync()); }
+            catch (Exception ex) { failures.Add("Community mods unavailable"); ErrorManager.LogError(ex.Message); }
+            // Do not retain withdrawn listings or legacy cached catalog entries.
+            discoverMods = loaded;
+            discoverLoadNotice = failures.Count == 0 ? "" : " · " + string.Join(" · ", failures) + ". Check your connection and Refresh to retry.";
+            RefreshDiscoverInventory();
+            BuildDiscoverFilters();
+            discoverRevealPending = true;
+        }
+        finally
+        {
+            discoverLoading = false;
+            DiscoverRefreshButton.IsEnabled = true;
+            ApplyDiscoverFilters(false);
+        }
     }
 
     private void BuildDiscoverFilters()
@@ -888,7 +923,12 @@ public partial class MainWindow : Window
         discoverPage = Math.Clamp(discoverPage, 0, pages - 1);
         ShowDiscoverMods(results.Skip(discoverPage * discoverPageSize).Take(discoverPageSize));
         DiscoverStatusText.Text = discoverSettings.resultsFormat.Replace("{count}", results.Count.ToString()).Replace("{total}", discoverMods.Count.ToString()) + discoverLoadNotice;
+        if (discoverInstalling && discoverInstallMessage.Length > 0) DiscoverStatusText.Text = discoverInstallMessage;
         DiscoverEmptyState.Visibility = results.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        DiscoverEmptyHeading.Text = discoverMods.Count == 0 && discoverLoadNotice.Length > 0 ? "Catalog unavailable" : discoverSettings.emptyTitle;
+        DiscoverEmptyDescription.Text = discoverMods.Count == 0
+            ? discoverLoadNotice.Length > 0 ? "Check your connection, then choose Refresh to try again." : "No published mods yet. Check back soon or submit your own."
+            : discoverSettings.emptyDescription;
         DiscoverPageText.Text = discoverSettings.pageFormat.Replace("{page}", (discoverPage + 1).ToString()).Replace("{pages}", pages.ToString());
         DiscoverPreviousButton.IsEnabled = discoverPage > 0;
         DiscoverNextButton.IsEnabled = discoverPage < pages - 1;
@@ -911,7 +951,7 @@ public partial class MainWindow : Window
             Tag = mod,
             CornerRadius = (CornerRadius)FindResource("CardRadius"),
             Padding = (Thickness)FindResource("CardInset"),
-            MinHeight = 132,
+            MinHeight = 180,
             Margin = new Thickness(0, 0, 0, 10)
         };
         var grid = new Grid();
@@ -968,14 +1008,12 @@ public partial class MainWindow : Window
             Foreground = (Brush)FindResource("Muted"),
             FontSize = 14,
             LineHeight = 21,
+            MaxHeight = 63,
+            TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(0, 6, 0, 8)
         });
-        var footer = new Grid();
-        footer.ColumnDefinitions.Add(new ColumnDefinition());
-        footer.ColumnDefinitions.Add(new ColumnDefinition
-        {
-            Width = GridLength.Auto
-        });
+        content.Children.Add(FeatureText(DiscoverInstallationStatus(mod), 12, true));
+        var footer = new StackPanel();
         var tags = new WrapPanel
         {
             VerticalAlignment = VerticalAlignment.Center
@@ -990,6 +1028,8 @@ public partial class MainWindow : Window
             tags.Children.Add(metadata);
         }
         footer.Children.Add(tags);
+        var actions = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+        actions.Children.Add(FeatureButton("View details", () => { OpenDiscoverDetails(mod); return Task.CompletedTask; }));
         var install = new Button
         {
             Content = discoverSettings.installLabel,
@@ -998,13 +1038,14 @@ public partial class MainWindow : Window
             Padding = new Thickness(8, 6, 8, 6),
             Margin = new Thickness(6, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            IsEnabled = !string.IsNullOrWhiteSpace(mod.download)
+            IsEnabled = !string.IsNullOrWhiteSpace(mod.download) && OrbitContentService.HasApprovedModHash(mod) && !discoverInstalling,
+            ToolTip = OrbitContentService.HasApprovedModHash(mod) ? "Install the verified DLL" : "The catalog maintainer must publish the reviewed DLL's SHA-256. Refresh Discover after approval."
         };
         System.Windows.Automation.AutomationProperties.SetName(install, "Install " + mod.name);
-        MaterialSymbols.Label(install, discoverSettings.installLabel.TrimEnd(' ', '↓'), "download");
+        MaterialSymbols.Label(install, OrbitContentService.HasApprovedModHash(mod) ? discoverSettings.installLabel.TrimEnd(' ', '↓') : "Approval required", "download");
         install.Click += InstallDiscoverMod_Click;
-        Grid.SetColumn(install, 1);
-        footer.Children.Add(install);
+        actions.Children.Add(install);
+        footer.Children.Add(actions);
         content.Children.Add(footer);
         grid.Children.Add(content);
         card.Child = grid;
@@ -1074,16 +1115,30 @@ public partial class MainWindow : Window
     }
     private async Task InstallDiscoverMod(DiscoverMod mod)
     {
+        if (discoverInstalling) return;
+        discoverInstalling = true;
         try
         {
-            DiscoverStatusText.Text = $"Downloading {mod.name}...";
-            await InstallModFile(mod);
-            DiscoverStatusText.Text = $"{mod.name} installed.";
+            ApplyDiscoverFilters(false);
+            await InstallModFile(mod, progress: ReportDiscoverInstall);
+            RefreshDiscoverInventory();
+            ReportDiscoverInstall($"{mod.name} installed. {DiscoverInstallationStatus(mod)}");
         }
         catch (Exception ex)
         {
-            DiscoverStatusText.Text = $"Could not install {mod.name}: {ex.Message}";
+            ReportDiscoverInstall($"Could not install {mod.name}: {ex.Message}");
             ErrorManager.LogError($"Could not install {mod.name}: {ex.Message}");
+        }
+        finally
+        {
+            discoverInstalling = false;
+            var message = DiscoverStatusText.Text;
+            RefreshDiscoverInventory();
+            ApplyDiscoverFilters(false);
+            DiscoverStatusText.Text = message;
+            if (discoverDetailsStatus is not null) discoverDetailsStatus.Text = message;
+            if (discoverDetailsInstall?.Tag is DiscoverMod detailsMod) discoverDetailsInstall.IsEnabled = !string.IsNullOrWhiteSpace(detailsMod.download) && OrbitContentService.HasApprovedModHash(detailsMod);
+            if (discoverDetailsProgress is not null) { discoverDetailsProgress.IsIndeterminate = false; discoverDetailsProgress.Visibility = Visibility.Collapsed; }
         }
     }
 

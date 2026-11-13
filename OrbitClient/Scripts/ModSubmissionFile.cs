@@ -19,6 +19,7 @@ public sealed record ModSubmissionFile(string Name, byte[] Bytes, string Sha256)
         {
             using var reader = new PEReader(new MemoryStream(bytes, writable: false));
             if (!reader.PEHeaders.IsDll || !reader.HasMetadata) throw new BadImageFormatException();
+            if (!System.Reflection.Metadata.PEReaderExtensions.GetMetadataReader(reader).IsAssembly) throw new BadImageFormatException();
             // Only read PE metadata. Never load the submitted assembly into the process.
         }
         catch (Exception ex) when (ex is BadImageFormatException or InvalidOperationException)

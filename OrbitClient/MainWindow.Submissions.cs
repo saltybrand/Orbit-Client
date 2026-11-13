@@ -75,11 +75,11 @@ public partial class MainWindow
         var panel = new StackPanel();
         panel.Children.Add(FeatureText("One DLL. One review.", 21));
         panel.Children.Add(FeatureText("One file per account per UTC day · Managed .NET DLL · Maximum 20 MB", 12, true));
-        var used = state.Today is { Status: not "uploading" };
+        var used = state.Today is { Status: not "uploading" } or { IsRemoved: true };
         if (used)
         {
             panel.Children.Clear();
-            panel.Children.Add(FeatureText("Today's DLL has been submitted", 20));
+            panel.Children.Add(FeatureText(state.Today?.IsRemoved == true ? "Today's submission was removed" : "Today's DLL has been submitted", 20));
             panel.Children.Add(FeatureText($"Your next upload slot opens {state.NextResetAt:MMM d, HH:mm} UTC. You can still view your submissions below.", 12, true));
             FeatureContent.Children.Add(FeatureCard(panel));
             return;
@@ -144,7 +144,7 @@ public partial class MainWindow
         var header = new DockPanel();
         var status = new Border { CornerRadius = new CornerRadius(10), Padding = new Thickness(6, 5, 6, 5), Background = (Brush)FindResource("AccentSoft"), HorizontalAlignment = HorizontalAlignment.Right };
         status.Padding = new Thickness(0); status.Background = Brushes.Transparent;
-        status.Child = FeatureText(item.Status switch { "pending" => "Awaiting review", "uploading" => "Upload incomplete", "approved" => item.PublishedAt is null ? "Approved · not published" : item.IsCurrent ? "Published in Discover" : "Previous approved revision", _ => "Rejected" }, 11);
+        status.Child = FeatureText(item.IsRemoved ? "Removed" : item.Status switch { "pending" => "Awaiting review", "uploading" => "Upload incomplete", "approved" => item.PublishedAt is null ? "Approved · not published" : item.IsCurrent ? "Published in Discover" : "Previous approved revision", _ => "Rejected" }, 11);
         ((TextBlock)status.Child).Margin = new Thickness(0); DockPanel.SetDock(status, Dock.Right); header.Children.Add(status); header.Children.Add(FeatureText(item.Title, 19)); body.Children.Add(header);
         body.Children.Add(FeatureText($"{item.FileName} · {item.ByteSize / 1048576d:0.00} MB · {item.CreatedAt.UtcDateTime:MMM d, yyyy HH:mm} UTC", 12, true));
         body.Children.Add(FeatureText($"v{item.Version} · {item.Category} · Revision {item.RevisionNumber}"+(item.ChangeType=="details"?" · Details-only edit; DLL unchanged":" · DLL release"),12,true));
@@ -162,6 +162,17 @@ public partial class MainWindow
             }
         }
         if (item.ReviewNotes.Length > 0) body.Children.Add(FeatureText("Review notes: " + item.ReviewNotes, 12, true));
+        if (!item.IsRemoved && item.UserId.ToString("D") == service.Account?.Id)
+            body.Children.Add(FeatureButton("Remove mod", async () =>
+            {
+                if (MessageBox.Show(this, $"Remove {item.Title} from Discover and withdraw its pending revisions?\n\nInstalled copies stay on users' computers. Submission history and today's DLL allowance are retained.",
+                    "Remove your mod", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+                await service.RemoveOwnedModAsync(item.ModId);
+                discoverMods.RemoveAll(mod => mod.id == "submission-" + item.ModId.ToString("D"));
+                BuildDiscoverFilters(); ApplyDiscoverFilters(false);
+                await OpenModSubmissionsAsync();
+                SetFeatureStatus("Mod removed from Discover. Its submission history is retained.");
+            }));
         FeatureContent.Children.Add(FeatureCard(body));
     }
 
