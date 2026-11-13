@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ![Orbit Beta](docs/images/orbit-beta-banner.png)
+=======
+<img width="1983" height="793" alt="exec-9d79665b-605f-43c5-aafe-cfe070369a98" src="https://github.com/user-attachments/assets/c463bcc8-8a4c-4bbd-aa15-7eb7dede9414" />
+>>>>>>> 6e38e49a64b67ae4cef57a94eeaaed9a1c224832
 
 # Orbit Beta
 
@@ -13,8 +17,12 @@ Orbit is a Windows desktop launcher and mod manager for Gorilla Tag. Launch the 
 ## Features
 
 - **Game launcher** — Launch and stop Gorilla Tag from the Home page.
+<<<<<<< HEAD
 - **Discover** — Browse mod listings and install mods from the catalog.
 - **Installed mods** — Inspect your plugins and enable or disable them.
+=======
+- **Installed mods** — Inspect your plugins.
+>>>>>>> 6e38e49a64b67ae4cef57a94eeaaed9a1c224832
 - **BepInEx setup** — Install or repair the loader while preserving existing plugins.
 - **Orbit profiles** — Choose a username, profile picture, and bio.
 - **Capes** — Browse the cape shop, manage owned capes, and redeem cape keys.
@@ -48,12 +56,15 @@ The current installer is unsigned, so Windows may display an unknown-publisher w
 
 ## Getting started
 
+<<<<<<< HEAD
 ### Mods
 
 Open **Browse mods** to explore Discover, then use **Installed mods** to manage your plugins. Create a snapshot before making major changes to your setup. Mod compatibility depends on the game version and each mod's requirements.
 
 Community mod downloads are checked against their approved SHA-256 hashes before installation. This verifies the downloaded file matches the approved release; it does not guarantee compatibility or safety in every situation.
 
+=======
+>>>>>>> 6e38e49a64b67ae4cef57a94eeaaed9a1c224832
 ### Profiles and capes
 
 Open **Profile** to create an Orbit account or sign in. Complete email confirmation when prompted, then customize your profile.
@@ -69,7 +80,10 @@ Use **Snapshots** to save your current setup before changing mods or configurati
 ## Beta limitations
 
 - Discord sign-in and password recovery depend on backend configuration and may be unavailable.
+<<<<<<< HEAD
 - Online features require access to Orbit's services.
+=======
+>>>>>>> 6e38e49a64b67ae4cef57a94eeaaed9a1c224832
 - Updates to Gorilla Tag or third-party mods can affect compatibility.
 - The installer is currently unsigned.
 
@@ -83,7 +97,11 @@ Open an [issue](https://github.com/saltybrand/Orbit-Client/issues) and include:
 - What you expected and what happened instead.
 - Relevant screenshots or error messages.
 
+<<<<<<< HEAD
 Remove passwords, tokens, redemption keys, and other private information before attaching logs or screenshots. Avoid posting exploit details publicly; use GitHub's private vulnerability reporting if it is enabled for this repository.
+=======
+Remove passwords, tokens, redemption keys, and other private information before attaching logs or screenshots. Avoid posting exploit details publicly; **use GitHub's private vulnerability reporting**.
+>>>>>>> 6e38e49a64b67ae4cef57a94eeaaed9a1c224832
 
 ## Uninstalling
 
